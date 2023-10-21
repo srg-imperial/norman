@@ -106,7 +106,7 @@ RUN \
     -DCMAKE_CXX_FLAGS='-Werror' \
     -DCMAKE_C_COMPILER=gcc-11 \
     -DCMAKE_CXX_COMPILER=g++-11 \
-    -DLLVM_CONFIG_BINARY=$(which llvm-config-12) \
+    -DLLVM_DIR=$(llvm-config-12 --libdir) \
     -DCOREUTILS_SOURCE_DIR=/coreutils \
     ../ \
   && sh -c "exec ninja -j${JOBS}"
