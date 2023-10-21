@@ -1,0 +1,147 @@
+stages:
+  - build
+  - test
+  - publish
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+build-base:
+  stage: build
+  needs: []
+  image:
+    name: gcr.io/kaniko-project/executor:v1.16.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$CI_DEPENDENCY_PROXY_SERVER\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+  parallel:
+    matrix:
+      - OS: [ubuntu-20.04, ubuntu-22.04]
+  script:
+      # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
+    - /kaniko/executor
+      --image-fs-extract-retry 5
+      --build-arg REGISTRY=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}
+      --context "${CI_PROJECT_DIR}"
+      --cache
+      --cache-repo ${CI_REGISTRY_IMAGE}/cache
+      --use-new-run
+      --snapshot-mode=redo
+      --skip-unused-stages
+      --dockerfile "${CI_PROJECT_DIR}/dockerfiles/${OS}.dockerfile"
+      --build-arg JOBS=4
+      --target base
+      --destination "${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-${OS}"
+
+build-prebuilt:
+  stage: build
+  needs: [build-base]
+  image:
+    name: gcr.io/kaniko-project/executor:v1.16.0-debug
+    entrypoint: [""]
+  before_script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$CI_DEPENDENCY_PROXY_SERVER\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+  parallel:
+    matrix:
+      - OS: [ubuntu-20.04, ubuntu-22.04]
+  script:
+      # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
+    - /kaniko/executor
+      --image-fs-extract-retry 5
+      --build-arg REGISTRY=${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}
+      --context "${CI_PROJECT_DIR}"
+      --cache
+      --cache-repo ${CI_REGISTRY_IMAGE}/cache
+      --use-new-run
+      --snapshot-mode=redo
+      --skip-unused-stages
+      --dockerfile "${CI_PROJECT_DIR}/dockerfiles/${OS}.dockerfile"
+      --build-arg JOBS=4
+      --target prebuilt
+      --no-push-cache
+      --destination "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}"
+
+test:
+  stage: test
+  needs: ["build-prebuilt"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
+  parallel:
+    matrix:
+      - OS: [ubuntu-20.04, ubuntu-22.04]
+  image: ${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - cd /product-program/build
+    - ctest --output-on-failure
+  after_script:
+    - > # save output on failure
+      if [ $CI_JOB_STATUS == 'failed' ]; then
+        mkdir "${CI_PROJECT_DIR}/output"
+        cd /product-program/build/test
+        cp -r --parents */Output "${CI_PROJECT_DIR}/output/"
+      fi
+  artifacts:
+    when: on_failure
+    paths:
+      - output
+    expire_in: 1 week
+
+
+test-sanitized:
+  stage: test
+  needs: ["build-coreutils"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
+  parallel:
+    matrix:
+      - OS: [ubuntu-22.04] # ubuntu 20.04 always fails, probably due to https://discourse.llvm.org/t/use-after-poison-error-in-clang-addattr-when-linking-with-pre-compiled-clang/62978
+  image: ${CI_REGISTRY_IMAGE}/ci/coreutils:${CI_COMMIT_SHA}-${OS}
+  script:
+    - mkdir build
+    - cd build
+    - cmake -GNinja
+      -DCMAKE_C_FLAGS="-fuse-ld=gold -Wall -Wextra -pedantic -Werror"
+      -DCMAKE_CXX_FLAGS="-fuse-ld=gold -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined"
+      -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11
+      -DLLVM_CONFIG_BINARY=$(which llvm-config-12)
+      -DCOREUTILS_SOURCE_DIR=/coreutils
+      ..
+    - ninja -j4
+    - ASAN_OPTIONS=detect_leaks=0 ctest --output-on-failure
+  after_script:
+    - pwd
+    - > # save output on failure
+      if [ $CI_JOB_STATUS == 'failed' ]; then
+        mkdir output
+        DIR="$(pwd)/output"
+        cd build/test
+        cp -r --parents */Output "$DIR"
+      fi
+  artifacts:
+    when: on_failure
+    paths:
+      - output
+    expire_in: 1 week
+
+format:
+  stage: test
+  needs: ["build-base"]
+  image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-22.04
+  script:
+    - find . -path ./vendor -prune -or \( -iname '*.cpp' -or -iname '*.c' -or -iname '*.h' \) -print | xargs clang-format-12 --dry-run --Werror
+
+publish:
+  stage: publish
+  # we want to wait until the full "test" stage completes successfully before publishing, so no "needs:" here
+  variables:
+    GIT_STRATEGY: none
+  only:
+    refs:
+      - main
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  before_script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-20.04" "${CI_REGISTRY_IMAGE}:latest-ubuntu-20.04"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04" "${CI_REGISTRY_IMAGE}:latest-ubuntu-22.04"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04" "${CI_REGISTRY_IMAGE}:latest"

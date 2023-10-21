@@ -1,0 +1,66 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+	"name": "ubuntu 22.04",
+
+  // Use a prebuilt image
+  // "image": "gitlab.doc.ic.ac.uk:4567/srg/product-program:devcontainer",
+
+  // Build an image using a dockerfile
+  "build": {
+		// Sets the run context to one level up instead of the .devcontainer folder.
+		"context": "..",
+    // Required when using a Dockerfile. The location of a Dockerfile that defines the contents of the container. The path is relative to the devcontainer.json file.
+    "dockerfile": "../dockerfiles/ubuntu-22.04.dockerfile",
+    // Build the devcontainer target
+    "target": "devcontainer",
+		// A dictionary of build arguments
+    "args": {
+			"USERNAME": "${localEnv:USER:user}"
+    }
+  },
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Uncomment the next line to run commands after the container is created - for example installing curl.
+	// "postCreateCommand": "",
+
+	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
+	"capAdd": [ "SYS_PTRACE" ],
+	"securityOpt": [ "seccomp=unconfined" ],
+
+	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
+	"mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
+
+	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "${localEnv:USER:user}",
+
+	"customizations": {
+    "vscode": {
+      "extensions": [
+				"editorconfig.editorconfig",
+        "fredericbonnet.cmake-test-adapter",
+				"gitlab.gitlab-workflow",
+				"ms-azuretools.vscode-docker",
+				"ms-python.python",
+				"ms-vscode.cmake-tools",
+				"ms-vscode.cpptools-extension-pack",
+				"ms-vsliveshare.vsliveshare",
+				"redhat.vscode-yaml",
+        "vadimcn.vscode-lldb"
+			],
+			"settings": {
+				"cmake.configureArgs": [
+					"-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=mold",
+					"-DCOREUTILS_SOURCE_DIR=/coreutils"
+				],
+        "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+        "C_Cpp.default.cppStandard": "c++17",
+        "C_Cpp.formatting": "clangFormat",
+        "C_Cpp.intelliSenseEngine": "default",
+        "cmake.cmakePath": "cmake",
+        "testExplorer.useNativeTesting": true
+			}
+    }
+  }
+}
