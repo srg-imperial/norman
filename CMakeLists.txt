@@ -15,7 +15,13 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
   GIT_TAG 10.1.1)
   
-FetchContent_MakeAvailable(fmtlib)
+FetchContent_GetProperties(fmtlib)
+if(NOT fmtlib_POPULATED)
+  FetchContent_Populate(fmtlib)
+  add_subdirectory(${fmtlib_SOURCE_DIR} ${fmtlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+# as of cmake 3.28 it should be possible to add `EXCLUDE_FROM_ALL` to the `FetchContent_Declare` call
+# and do an ordinary `FetchContent_MakeAvailable(fmtlib)` to achieve the same effect
 
 find_package(RapidJSON REQUIRED CONFIG)
 

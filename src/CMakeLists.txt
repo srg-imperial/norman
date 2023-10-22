@@ -26,4 +26,4 @@ target_link_libraries(NormaliseExprTransform PRIVATE
   fmt::fmt
 )
 
-install(TARGETS NormaliseExprTransform RUNTIME DESTINATION bin)
+install(TARGETS NormaliseExprTransform DESTINATION bin)
