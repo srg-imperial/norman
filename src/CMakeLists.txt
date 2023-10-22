@@ -13,7 +13,6 @@ add_executable(NormaliseExprTransform
   LOrOperator.cpp
   ParenExpr.cpp
   ReturnStmt.cpp
-  StmtExpr.cpp
   StringLiteral.cpp
   SwitchStmt.cpp
   WhileStmt.cpp
