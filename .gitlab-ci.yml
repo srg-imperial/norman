@@ -3,8 +3,13 @@ stages:
   - test
   - publish
 
-variables:
-  GIT_SUBMODULE_STRATEGY: recursive
+.full-matrix:
+  parallel:
+    matrix:
+      - OS: ubuntu-22.04
+        LLVM: [12, 13, 14, 15]
+      - OS: ubuntu-23.10
+        LLVM: [13, 14, 15, 16, 17]
 
 build-base:
   stage: build
@@ -14,10 +19,7 @@ build-base:
     entrypoint: [""]
   before_script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$CI_DEPENDENCY_PROXY_SERVER\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-  parallel:
-    matrix:
-      - OS: [ubuntu-22.04]
-        LLVM: [12, 13, 14, 15]
+  extends: .full-matrix
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
@@ -43,10 +45,7 @@ build-prebuilt:
     entrypoint: [""]
   before_script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(printf "%s:%s" "${CI_REGISTRY_USER}" "${CI_REGISTRY_PASSWORD}" | base64 | tr -d '\n')\"},\"$CI_DEPENDENCY_PROXY_SERVER\":{\"auth\":\"$(printf "%s:%s" ${CI_DEPENDENCY_PROXY_USER} "${CI_DEPENDENCY_PROXY_PASSWORD}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-  parallel:
-    matrix:
-      - OS: [ubuntu-22.04]
-        LLVM: [12, 13, 14, 15]
+  extends: .full-matrix
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
@@ -68,9 +67,7 @@ build-prebuilt:
 # test:
 #   stage: test
 #   needs: ["build-prebuilt"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
-#   parallel:
-#     matrix:
-#       - OS: [ubuntu-22.04]
+#   extends: .full-matrix
 #   image: ${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}
 #   variables:
 #     GIT_STRATEGY: none
@@ -95,16 +92,16 @@ build-prebuilt:
 #   needs: ["build-base"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
 #   parallel:
 #     matrix:
-#       - OS: [ubuntu-22.04]
+#       - OS: ubuntu-22.04
+#         LLVM: [12]
 #   image: ${CI_REGISTRY_IMAGE}/ci/coreutils:${CI_COMMIT_SHA}-${OS}
 #   script:
 #     - mkdir build
 #     - cd build
 #     - cmake -GNinja
-#       -DCMAKE_C_FLAGS="-fuse-ld=gold -Wall -Wextra -pedantic -Werror"
-#       -DCMAKE_CXX_FLAGS="-fuse-ld=gold -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined"
-#       -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11
-#       -DLLVM_DIR=$(llvm-config-12 --libdir)
+#       -DCMAKE_C_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror"
+#       -DCMAKE_CXX_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined"
+#       -DLLVM_DIR=$(llvm-config-${LLVM} --libdir)
 #       -DCOREUTILS_SOURCE_DIR=/coreutils
 #       ..
 #     - ninja -j4
@@ -139,11 +136,27 @@ publish:
   only:
     refs:
       - main
+  extends: .full-matrix
   image:
     name: gcr.io/go-containerregistry/crane:debug
     entrypoint: [""]
   before_script:
     - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12" "${CI_REGISTRY_IMAGE}:latest-ubuntu-22.04-llvm-12"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}-llvm-${LLVM}" "${CI_REGISTRY_IMAGE}:${OS}-llvm-${LLVM}"
+
+publish-latest:
+  stage: publish
+  # we want to wait until the full "test" stage completes successfully before publishing, so no "needs:" here
+  variables:
+    GIT_STRATEGY: none
+  only:
+    refs:
+      - main
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  before_script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
     - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12" "${CI_REGISTRY_IMAGE}:latest"

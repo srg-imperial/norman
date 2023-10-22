@@ -1,7 +1,7 @@
 ## stage 1: setup base image
 ARG REGISTRY=docker.io
-FROM ${REGISTRY}/library/ubuntu:22.04 AS base
-ARG LLVM=12
+FROM ${REGISTRY}/library/ubuntu:23.10 AS base
+ARG LLVM=15
 ARG JOBS=$(nproc)
 
 # build-essential: compilers for the main project
@@ -28,8 +28,8 @@ ARG JOBS=$(nproc)
 # wget: used when bootstrapping coreutils
 # zlib1g-dev: minisat, stp, klee
 RUN \
-  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:22.04/var/cache/apt/ \
-  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:22.04/var/lib/apt/lists/ \
+  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:23.10/var/cache/apt/ \
+  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:23.10/var/lib/apt/lists/ \
   mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes / \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     build-essential \
@@ -53,8 +53,8 @@ ENV LLVM_COMPILER=clang LLVM_COMPILER_PATH=/usr/lib/llvm-${LLVM}/bin/
 ## stage 2a: devcontainer
 FROM base AS devcontainer
 RUN \
-  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:22.04/var/cache/apt/ \
-  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:22.04/var/lib/apt/lists/ \
+  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:23.10/var/cache/apt/ \
+  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:23.10/var/lib/apt/lists/ \
   mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes / \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     bash-completion \
@@ -74,7 +74,8 @@ ARG UID=1000
 ARG GID=${UID}
 
 RUN \
-	groupadd -g ${GID} ${GROUPNAME} \
+  userdel ubuntu \
+	&& groupadd -g ${GID} ${GROUPNAME} \
 	&& useradd -m --uid ${UID} --gid ${GID} -G sudo,docker -s "$(which bash)" ${USERNAME} \
 	&& echo %sudo ALL=\(ALL:ALL\) NOPASSWD:ALL > /etc/sudoers.d/nopasswd \
   && chmod 0440 /etc/sudoers.d/nopasswd

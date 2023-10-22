@@ -1,6 +1,6 @@
 // For format details, see https://aka.ms/devcontainer.json.
 {
-	"name": "ubuntu 22.04",
+	"name": "norman",
 
   // Use a prebuilt image
   // "image": "gitlab.doc.ic.ac.uk:4567/srg/product-program:devcontainer",
