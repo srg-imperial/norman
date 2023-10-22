@@ -16,7 +16,7 @@
 		// A dictionary of build arguments
     "args": {
 			"USERNAME": "${localEnv:USER:user}",
-			"LLVM": "13"
+			"LLVM": "12"
     }
   },
 

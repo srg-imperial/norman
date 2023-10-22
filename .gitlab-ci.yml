@@ -17,7 +17,7 @@ build-base:
   parallel:
     matrix:
       - OS: [ubuntu-22.04]
-        LLVM: [12, 13]
+        LLVM: [12, 13, 14, 15]
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
@@ -46,7 +46,7 @@ build-prebuilt:
   parallel:
     matrix:
       - OS: [ubuntu-22.04]
-        LLVM: [12, 13]
+        LLVM: [12, 13, 14, 15]
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
