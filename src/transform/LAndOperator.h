@@ -8,5 +8,6 @@
 #include <optional>
 
 namespace transform {
-std::optional<TransformationResult> transformLAndOperator(clang::ASTContext* astContext, clang::BinaryOperator* binop);
+	std::optional<TransformationResult> transformLAndOperator(clang::ASTContext* astContext,
+	                                                          clang::BinaryOperator* binop);
 }

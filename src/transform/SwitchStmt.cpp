@@ -87,7 +87,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* astContext, clang::SwitchStmt* switchStmt) {
+std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* astContext,
+                                                          clang::SwitchStmt* switchStmt) {
 	// naked continue statements clash with our rewrite, as they are now caught by the `switch' replacement instead of a
 	// surrounding loop
 	if(checks::naked_continue(switchStmt)) {

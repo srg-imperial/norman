@@ -9,5 +9,5 @@
 #include <string>
 
 namespace transform {
-std::optional<std::string> transformWhileStmt(clang::ASTContext* astContext, clang::WhileStmt* whileStmt);
+	std::optional<std::string> transformWhileStmt(clang::ASTContext* astContext, clang::WhileStmt* whileStmt);
 }

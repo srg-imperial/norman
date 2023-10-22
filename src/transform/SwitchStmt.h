@@ -9,5 +9,5 @@
 #include <string>
 
 namespace transform {
-std::optional<std::string> transformSwitchStmt(clang::ASTContext* astContext, clang::SwitchStmt* switchStmt);
+	std::optional<std::string> transformSwitchStmt(clang::ASTContext* astContext, clang::SwitchStmt* switchStmt);
 }

@@ -8,5 +8,5 @@
 #include <optional>
 
 namespace transform {
-std::optional<TransformationResult> transformLOrOperator(clang::ASTContext* astContext, clang::BinaryOperator* binop);
+	std::optional<TransformationResult> transformLOrOperator(clang::ASTContext* astContext, clang::BinaryOperator* binop);
 }

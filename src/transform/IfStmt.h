@@ -9,5 +9,5 @@
 #include <string>
 
 namespace transform {
-std::optional<std::string> transformIfStmt(clang::ASTContext* astContext, clang::IfStmt* ifStmt);
+	std::optional<std::string> transformIfStmt(clang::ASTContext* astContext, clang::IfStmt* ifStmt);
 }

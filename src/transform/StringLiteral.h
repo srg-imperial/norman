@@ -8,5 +8,6 @@
 #include <optional>
 
 namespace transform {
-std::optional<TransformationResult> transformStringLiteral(clang::ASTContext* astContext, clang::StringLiteral* strLit);
+	std::optional<TransformationResult> transformStringLiteral(clang::ASTContext* astContext,
+	                                                           clang::StringLiteral* strLit);
 }
