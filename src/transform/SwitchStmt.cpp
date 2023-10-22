@@ -1,13 +1,12 @@
 #include "SwitchStmt.h"
 
-#include "checks/Label.h"
-#include "checks/NakedBreak.h"
-#include "checks/NakedContinue.h"
+#include "../check/Label.h"
+#include "../check/NakedBreak.h"
+#include "../check/NakedContinue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -88,7 +87,7 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transformSwitchStmt(clang::ASTContext* astContext, clang::SwitchStmt* switchStmt) {
+std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* astContext, clang::SwitchStmt* switchStmt) {
 	// naked continue statements clash with our rewrite, as they are now caught by the `switch' replacement instead of a
 	// surrounding loop
 	if(checks::naked_continue(switchStmt)) {
@@ -102,7 +101,7 @@ std::optional<std::string> transformSwitchStmt(clang::ASTContext* astContext, cl
 
 	clang::Expr* cond = switchStmt->getCond();
 
-	auto var_name = utils::uid(astContext, "_Switch");
+	auto var_name = util::uid(astContext, "_Switch");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &astContext->Idents.get(var_name), cond->getType(), nullptr, clang::StorageClass::SC_None);

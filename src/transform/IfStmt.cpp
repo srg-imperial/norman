@@ -1,11 +1,10 @@
 #include "IfStmt.h"
 
-#include "checks/SimpleValue.h"
+#include "../check/SimpleValue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -32,7 +31,7 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transformIfStmt(clang::ASTContext* astContext, clang::IfStmt* ifStmt) {
+std::optional<std::string> transform::transformIfStmt(clang::ASTContext* astContext, clang::IfStmt* ifStmt) {
 	clang::Expr* cond = ifStmt->getCond()->IgnoreImpCasts();
 	clang::Stmt* then_stmt = ifStmt->getThen();
 	clang::Stmt* else_stmt = ifStmt->getElse();
@@ -54,7 +53,7 @@ std::optional<std::string> transformIfStmt(clang::ASTContext* astContext, clang:
 		}
 		return {std::move(result)};
 	} else {
-		std::string var_name = utils::uid(astContext, "_IfCond");
+		std::string var_name = util::uid(astContext, "_IfCond");
 		clang::VarDecl* vd = clang::VarDecl::Create(
 		  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 		  &astContext->Idents.get(var_name), ifStmt->getCond()->getType(), nullptr, clang::StorageClass::SC_None);

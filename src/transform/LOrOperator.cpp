@@ -1,15 +1,16 @@
 #include "LOrOperator.h"
 
-#include "utils/UId.h"
+#include "../util/UId.h"
 
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
-std::optional<TransformationResult> transformLOrOperator(clang::ASTContext* astContext, clang::BinaryOperator* binop) {
+std::optional<TransformationResult> transform::transformLOrOperator(clang::ASTContext* astContext,
+                                                                    clang::BinaryOperator* binop) {
 	auto lhs = binop->getLHS()->IgnoreParens();
 	auto rhs = binop->getRHS()->IgnoreParens();
 
@@ -43,7 +44,7 @@ std::optional<TransformationResult> transformLOrOperator(clang::ASTContext* astC
 		}
 	}
 
-	std::string var_name = utils::uid(astContext, "_LOr");
+	std::string var_name = util::uid(astContext, "_LOr");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *astContext)) {
 		if(rhs_val) {

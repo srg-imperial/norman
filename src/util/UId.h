@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-namespace utils {
+namespace util {
 	inline std::string uid(clang::ASTContext* astContext, std::string prefix) {
 		using namespace std::literals;
 
@@ -25,4 +25,4 @@ namespace utils {
 			var_name.resize(prefix_len);
 		}
 	}
-} // namespace utils
+} // namespace util

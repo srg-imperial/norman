@@ -1,12 +1,11 @@
 #include "DoStmt.h"
 
-#include "checks/Label.h"
-#include "checks/NakedBreak.h"
-#include "checks/NakedContinue.h"
+#include "../check/Label.h"
+#include "../check/NakedBreak.h"
+#include "../check/NakedContinue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -33,7 +32,7 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transformDoStmt(clang::ASTContext* astContext, clang::DoStmt* doStmt) {
+std::optional<std::string> transform::transformDoStmt(clang::ASTContext* astContext, clang::DoStmt* doStmt) {
 	clang::Stmt* body = doStmt->getBody();
 	clang::Expr* cond = doStmt->getCond();
 
@@ -74,7 +73,7 @@ std::optional<std::string> transformDoStmt(clang::ASTContext* astContext, clang:
 		return {std::move(result)};
 	}
 
-	auto var_name = utils::uid(astContext, "_DoStmt");
+	auto var_name = util::uid(astContext, "_DoStmt");
 
 	fmt::format_to(std::back_inserter(result), "_Bool {} = 1;\nwhile({} || ({})) {{\n{} = 0;\n", var_name, var_name,
 	               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),

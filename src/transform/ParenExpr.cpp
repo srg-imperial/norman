@@ -1,15 +1,16 @@
 #include "ParenExpr.h"
 
-#include "checks/SimpleValue.h"
+#include "../check/SimpleValue.h"
 
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
-std::optional<TransformationResult> transformParenExpr(clang::ASTContext* astContext, clang::ParenExpr* pexpr) {
+std::optional<TransformationResult> transform::transformParenExpr(clang::ASTContext* astContext,
+                                                                  clang::ParenExpr* pexpr) {
 	auto stripped = pexpr->IgnoreParens();
 
 	if(checks::isSimpleValue(stripped)) {

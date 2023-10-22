@@ -1,9 +1,9 @@
 #include "ConditionalOperator.h"
 
-#include "utils/UId.h"
+#include "../util/UId.h"
 
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -16,8 +16,8 @@
 #include <string>
 #include <utility>
 
-std::optional<TransformationResult> transformConditionalOperator(clang::ASTContext* astContext,
-                                                                 clang::ConditionalOperator* cop) {
+std::optional<TransformationResult> transform::transformConditionalOperator(clang::ASTContext* astContext,
+                                                                            clang::ConditionalOperator* cop) {
 	auto const* cond = cop->getCond()->IgnoreParens();
 
 	auto cexpr = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
@@ -38,7 +38,7 @@ std::optional<TransformationResult> transformConditionalOperator(clang::ASTConte
 		}
 	}
 
-	std::string var_name = utils::uid(astContext, "_CExpr");
+	std::string var_name = util::uid(astContext, "_CExpr");
 
 	auto const expr_type = cop->getType();
 	if(expr_type->isVoidType()) {

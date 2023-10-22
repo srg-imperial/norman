@@ -1,28 +1,28 @@
-add_executable(NormaliseExprTransform
-  NormaliseExprTransform.cpp
-  checks/Label.cpp
-  checks/NakedBreak.cpp
-  checks/NakedContinue.cpp
-  CallArg.cpp
-  CommaOperator.cpp
-  ConditionalOperator.cpp
-  DoStmt.cpp
-  ForStmt.cpp
-  IfStmt.cpp
-  LAndOperator.cpp
-  LOrOperator.cpp
-  ParenExpr.cpp
-  ReturnStmt.cpp
-  StringLiteral.cpp
-  SwitchStmt.cpp
-  WhileStmt.cpp
+add_executable(norman
+  Norman.cpp
+  check/Label.cpp
+  check/NakedBreak.cpp
+  check/NakedContinue.cpp
+  transform/CallArg.cpp
+  transform/CommaOperator.cpp
+  transform/ConditionalOperator.cpp
+  transform/DoStmt.cpp
+  transform/ForStmt.cpp
+  transform/IfStmt.cpp
+  transform/LAndOperator.cpp
+  transform/LOrOperator.cpp
+  transform/ParenExpr.cpp
+  transform/ReturnStmt.cpp
+  transform/StringLiteral.cpp
+  transform/SwitchStmt.cpp
+  transform/WhileStmt.cpp
 )
 
-target_link_libraries(NormaliseExprTransform PRIVATE
+target_link_libraries(norman PRIVATE
   clangASTMatchers
   clangBasic
   clangTooling
   fmt::fmt
 )
 
-install(TARGETS NormaliseExprTransform DESTINATION bin)
+install(TARGETS norman DESTINATION bin)

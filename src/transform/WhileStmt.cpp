@@ -1,13 +1,11 @@
 #include "WhileStmt.h"
 
-#include "checks/SimpleValue.h"
+#include "../check/NakedContinue.h"
+#include "../check/SimpleValue.h"
+#include "../util/UId.h"
 
-#include "checks/NakedContinue.h"
-
-#include "utils/UId.h"
-
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -34,7 +32,7 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transformWhileStmt(clang::ASTContext* astContext, clang::WhileStmt* whileStmt) {
+std::optional<std::string> transform::transformWhileStmt(clang::ASTContext* astContext, clang::WhileStmt* whileStmt) {
 	clang::Expr* cond = whileStmt->getCond()->IgnoreImpCasts();
 	clang::Stmt* body = whileStmt->getBody();
 
@@ -50,7 +48,7 @@ std::optional<std::string> transformWhileStmt(clang::ASTContext* astContext, cla
 		append_as_compound(result, astContext, body);
 		return {std::move(result)};
 	} else if(!checks::naked_continue(body)) {
-		std::string var_name = utils::uid(astContext, "_WhileCond");
+		std::string var_name = util::uid(astContext, "_WhileCond");
 		auto cond_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
 		                                            astContext->getSourceManager(), astContext->getLangOpts());
 

@@ -1,11 +1,10 @@
 #include "ReturnStmt.h"
 
-#include "checks/SimpleValue.h"
+#include "../check/SimpleValue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -16,7 +15,8 @@
 #include <iterator>
 #include <string>
 
-std::optional<std::string> transformReturnStmt(clang::ASTContext* astContext, clang::ReturnStmt* returnStmt) {
+std::optional<std::string> transform::transformReturnStmt(clang::ASTContext* astContext,
+                                                          clang::ReturnStmt* returnStmt) {
 	clang::Expr* retVal = returnStmt->getRetValue();
 	if(!retVal) {
 		return {};
@@ -34,7 +34,7 @@ std::optional<std::string> transformReturnStmt(clang::ASTContext* astContext, cl
 		                                                astContext->getSourceManager(), astContext->getLangOpts()))};
 	}
 
-	std::string var_name = utils::uid(astContext, "_Return");
+	std::string var_name = util::uid(astContext, "_Return");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &astContext->Idents.get(var_name), returnStmt->getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);

@@ -1,8 +1,8 @@
 #include "LAndOperator.h"
 
-#include "utils/UId.h"
+#include "../util/UId.h"
 
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -11,7 +11,8 @@
 
 #include <string>
 
-std::optional<TransformationResult> transformLAndOperator(clang::ASTContext* astContext, clang::BinaryOperator* binop) {
+std::optional<TransformationResult> transform::transformLAndOperator(clang::ASTContext* astContext,
+                                                                     clang::BinaryOperator* binop) {
 	auto lhs = binop->getLHS()->IgnoreParens();
 	auto rhs = binop->getRHS()->IgnoreParens();
 
@@ -45,7 +46,7 @@ std::optional<TransformationResult> transformLAndOperator(clang::ASTContext* ast
 		}
 	}
 
-	std::string var_name = utils::uid(astContext, "_LAnd");
+	std::string var_name = util::uid(astContext, "_LAnd");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *astContext)) {
 		if(rhs_val) {

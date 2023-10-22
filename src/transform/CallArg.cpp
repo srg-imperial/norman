@@ -1,11 +1,10 @@
 #include "CallArg.h"
 
-#include "checks/SimpleValue.h"
+#include "../check/SimpleValue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_clang.h"
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_clang.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -14,14 +13,14 @@
 
 #include <string>
 
-std::optional<TransformationResult> transformCallArg(clang::ASTContext* astContext, clang::Expr* arg) {
+std::optional<TransformationResult> transform::transformCallArg(clang::ASTContext* astContext, clang::Expr* arg) {
 	clang::Expr* simplified_arg = arg->IgnoreImpCasts()->IgnoreParens();
 
 	if(checks::isSimpleValue(simplified_arg)) {
 		return {};
 	}
 
-	std::string var_name = utils::uid(astContext, "_CallArg");
+	std::string var_name = util::uid(astContext, "_CallArg");
 
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),

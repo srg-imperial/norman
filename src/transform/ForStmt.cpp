@@ -1,10 +1,9 @@
 #include "ForStmt.h"
 
-#include "checks/NakedContinue.h"
+#include "../check/NakedContinue.h"
+#include "../util/UId.h"
 
-#include "utils/UId.h"
-
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
@@ -56,7 +55,7 @@ namespace {
 				  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(inc->IgnoreParens()->getSourceRange()),
 				                              astContext->getSourceManager(), astContext->getLangOpts());
 				if(checks::naked_continue(body)) {
-					std::string var_name = utils::uid(astContext, "_ForStmt");
+					std::string var_name = util::uid(astContext, "_ForStmt");
 					out = fmt::format_to(out, "_Bool {} = 0;", var_name);
 					transform_cond();
 					out = fmt::format_to(out, "{{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, inc_str, var_name);
@@ -99,7 +98,7 @@ namespace {
 	};
 } // namespace
 
-std::optional<std::string> transformForStmt(clang::ASTContext* astContext, clang::ForStmt* forStmt) {
+std::optional<std::string> transform::transformForStmt(clang::ASTContext* astContext, clang::ForStmt* forStmt) {
 	std::string result;
 
 	ForTransformer{astContext, forStmt, std::back_inserter(result)}.transform();

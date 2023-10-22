@@ -1,14 +1,14 @@
 #include "CommaOperator.h"
 
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
-std::optional<TransformationResult> transformCommaOperator(clang::ASTContext* astContext,
-                                                           clang::BinaryOperator* binop) {
+std::optional<TransformationResult> transform::transformCommaOperator(clang::ASTContext* astContext,
+                                                                      clang::BinaryOperator* binop) {
 	clang::Expr* lhs = binop->getLHS();
 	clang::Expr* rhs = binop->getRHS();
 

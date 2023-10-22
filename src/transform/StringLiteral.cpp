@@ -1,14 +1,14 @@
 #include "StringLiteral.h"
 
-#include "utils/fmtlib_llvm.h"
+#include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
-std::optional<TransformationResult> transformStringLiteral(clang::ASTContext* astContext,
-                                                           clang::StringLiteral* strLit) {
+std::optional<TransformationResult> transform::transformStringLiteral(clang::ASTContext* astContext,
+                                                                      clang::StringLiteral* strLit) {
 	if(strLit->getNumConcatenated() != 1) {
 		std::string result;
 		{

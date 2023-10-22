@@ -1,20 +1,18 @@
-#include "CallArg.h"
-#include "CommaOperator.h"
-#include "ConditionalOperator.h"
-#include "DoStmt.h"
-#include "ForStmt.h"
-#include "IfStmt.h"
-#include "LAndOperator.h"
-#include "LOrOperator.h"
-#include "ParenExpr.h"
-#include "ReturnStmt.h"
-#include "StringLiteral.h"
-#include "SwitchStmt.h"
-#include "WhileStmt.h"
-
-#include "utils/FunctionFilter.h"
-#include "utils/Log.h"
-#include "utils/NumberRange.h"
+#include "transform/CallArg.h"
+#include "transform/CommaOperator.h"
+#include "transform/ConditionalOperator.h"
+#include "transform/DoStmt.h"
+#include "transform/ForStmt.h"
+#include "transform/IfStmt.h"
+#include "transform/LAndOperator.h"
+#include "transform/LOrOperator.h"
+#include "transform/ParenExpr.h"
+#include "transform/ReturnStmt.h"
+#include "transform/StringLiteral.h"
+#include "transform/SwitchStmt.h"
+#include "transform/WhileStmt.h"
+#include "util/FunctionFilter.h"
+#include "util/Log.h"
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTConsumer.h>
@@ -30,10 +28,11 @@
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/FileSystem.h>
 
+#include <fmt/format.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <filesystem>
-#include <fmt/format.h>
 #include <fstream>
 #include <optional>
 #include <string>
@@ -75,7 +74,7 @@ public:
 
 		for(unsigned i = 0, num_args = cexpr->getNumArgs(); i < num_args; i++) {
 			Expr* arg = cexpr->getArg(i);
-			if(auto output_pair = transformCallArg(astContext, arg)) {
+			if(auto output_pair = transform::transformCallArg(astContext, arg)) {
 				if(!output_pair->to_hoist.empty()) {
 					to_hoist.emplace_back(std::move(output_pair->to_hoist));
 				}
@@ -111,7 +110,7 @@ public:
 	bool Traverse##kind(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output_pair = transform##kind(astContext, node)) {                                                         \
+		if(auto output_pair = transform::transform##kind(astContext, node)) {                                              \
 			if(!output_pair->to_hoist.empty()) {                                                                             \
 				to_hoist.emplace_back(std::move(output_pair->to_hoist));                                                       \
 			}                                                                                                                \
@@ -129,7 +128,7 @@ public:
 	bool Traverse##type(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output = transform##type(astContext, node)) {                                                              \
+		if(auto output = transform::transform##type(astContext, node)) {                                                   \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), *output);                                            \
                                                                                                                        \
