@@ -1,6 +1,7 @@
 ## stage 1: setup base image
 ARG REGISTRY=docker.io
 FROM ${REGISTRY}/library/ubuntu:22.04 AS base
+ARG LLVM=12
 ARG JOBS=$(nproc)
 
 # build-essential: compilers for the main project
@@ -33,20 +34,20 @@ RUN \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     build-essential \
     ca-certificates \
-    clang-12 \
-    clang-format-12 \
+    clang-${LLVM} \
+    clang-format-${LLVM} \
     cmake \
     git \
-    libclang-12-dev \
-    llvm-12 \
-    llvm-12-dev \
-    llvm-12-tools \
+    libclang-${LLVM}-dev \
+    llvm-${LLVM} \
+    llvm-${LLVM}-dev \
+    llvm-${LLVM}-tools \
     mold \
     ninja-build \
     rapidjson-dev \
   && mv /docker-clean /docker-gzip-indexes /etc/apt/apt.conf.d/
 
-ENV LLVM_COMPILER=clang LLVM_COMPILER_PATH=/usr/lib/llvm-12/bin/
+ENV LLVM_COMPILER=clang LLVM_COMPILER_PATH=/usr/lib/llvm-${LLVM}/bin/
 
 
 ## stage 2a: devcontainer
@@ -94,6 +95,7 @@ WORKDIR /normalize-transform
 
 ## stage 3: prebuilt
 FROM sources AS prebuilt
+ARG LLVM=12
 ARG JOBS=$(nproc)
 
 RUN \
@@ -106,7 +108,7 @@ RUN \
     -DCMAKE_CXX_FLAGS='-Werror' \
     -DCMAKE_C_COMPILER=gcc-11 \
     -DCMAKE_CXX_COMPILER=g++-11 \
-    -DLLVM_DIR=$(llvm-config-12 --libdir) \
+    -DLLVM_DIR=$(llvm-config-${LLVM} --libdir) \
     -DCOREUTILS_SOURCE_DIR=/coreutils \
     ../ \
   && sh -c "exec ninja -j${JOBS}"

@@ -15,7 +15,8 @@
     "target": "devcontainer",
 		// A dictionary of build arguments
     "args": {
-			"USERNAME": "${localEnv:USER:user}"
+			"USERNAME": "${localEnv:USER:user}",
+			"LLVM": "13"
     }
   },
 

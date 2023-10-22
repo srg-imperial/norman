@@ -17,6 +17,7 @@ build-base:
   parallel:
     matrix:
       - OS: [ubuntu-22.04]
+        LLVM: [12, 13]
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
@@ -29,9 +30,10 @@ build-base:
       --snapshot-mode=redo
       --skip-unused-stages
       --dockerfile "${CI_PROJECT_DIR}/dockerfiles/${OS}.dockerfile"
+      --build-arg LLVM=${LLVM}
       --build-arg JOBS=4
       --target base
-      --destination "${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-${OS}"
+      --destination "${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-${OS}-llvm-${LLVM}"
 
 build-prebuilt:
   stage: build
@@ -44,6 +46,7 @@ build-prebuilt:
   parallel:
     matrix:
       - OS: [ubuntu-22.04]
+        LLVM: [12, 13]
   script:
       # we also enable two less-than-stable features (`--use-new-run` and `--snapshot-mode=redo`) purely for performance
     - /kaniko/executor
@@ -56,10 +59,11 @@ build-prebuilt:
       --snapshot-mode=redo
       --skip-unused-stages
       --dockerfile "${CI_PROJECT_DIR}/dockerfiles/${OS}.dockerfile"
+      --build-arg LLVM=${LLVM}
       --build-arg JOBS=4
       --target prebuilt
       --no-push-cache
-      --destination "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}"
+      --destination "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}-llvm-${LLVM}"
 
 # test:
 #   stage: test
@@ -123,7 +127,7 @@ build-prebuilt:
 format:
   stage: test
   needs: ["build-base"]
-  image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-22.04
+  image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12
   script:
     - find . -path ./vendor -prune -or \( -iname '*.cpp' -or -iname '*.c' -or -iname '*.h' \) -print | xargs clang-format-12 --dry-run --Werror
 
@@ -141,5 +145,5 @@ publish:
   before_script:
     - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04" "${CI_REGISTRY_IMAGE}:latest-ubuntu-22.04"
-    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04" "${CI_REGISTRY_IMAGE}:latest"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12" "${CI_REGISTRY_IMAGE}:latest-ubuntu-22.04-llvm-12"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12" "${CI_REGISTRY_IMAGE}:latest"
