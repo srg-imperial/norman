@@ -44,7 +44,6 @@ using namespace clang;
 
 Rewriter rewriter;
 
-std::string output_directory;
 bool rewritten = false; // flag to be set if our normalisation pass was able to rewrite anything in the original file
 
 class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
@@ -187,25 +186,24 @@ public:
 	}
 };
 
-class NormaliseExprASTConsumer : public ASTConsumer {
-	NormaliseExprVisitor* visitor;
+class NormaliseExprASTConsumer final : public ASTConsumer {
+	NormaliseExprVisitor visitor;
 
 public:
 	explicit NormaliseExprASTConsumer(CompilerInstance* CI, FunctionFilter const& functionFilter)
-	  : visitor(new NormaliseExprVisitor(CI, functionFilter)) { }
+	  : visitor{CI, functionFilter} { }
 
-	virtual void HandleTranslationUnit(ASTContext& Context) {
-		// The TranslationUnitDecl represents the entire source file
-		visitor->TraverseDecl(Context.getTranslationUnitDecl());
-	}
+	void HandleTranslationUnit(ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
 };
 
 class NormaliseExprFrontendAction : public ASTFrontendAction {
+	std::string_view output;
 	FunctionFilter const& functionFilter;
 
 public:
-	NormaliseExprFrontendAction(FunctionFilter const& functionFilter)
-	  : functionFilter(functionFilter) { }
+	NormaliseExprFrontendAction(std::string_view output, FunctionFilter const& functionFilter)
+	  : output(output)
+	  , functionFilter(functionFilter) { }
 
 	virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) final {
 		return std::unique_ptr<clang::ASTConsumer>(new NormaliseExprASTConsumer(&CI, functionFilter));
@@ -216,16 +214,14 @@ public:
 			return;
 		}
 		SourceManager& SM = rewriter.getSourceMgr();
-		std::string base_filename = SM.getFileEntryForID(SM.getMainFileID())->getName().str();
-		std::string available_file = output_directory + "/prod-3.c";
 		const RewriteBuffer* rb = rewriter.getRewriteBufferFor(SM.getMainFileID());
 
 		if(rb) {
 			std::error_code error_code;
 #if LLVM_VERSION_MAJOR > 12
-			llvm::raw_fd_ostream outFile(output_directory + "/prod-3.c", error_code, llvm::sys::fs::OF_None);
+			llvm::raw_fd_ostream outFile(output, error_code, llvm::sys::fs::OF_None);
 #else
-			llvm::raw_fd_ostream outFile(output_directory + "/prod-3.c", error_code, llvm::sys::fs::F_None);
+			llvm::raw_fd_ostream outFile(output, error_code, llvm::sys::fs::F_None);
 #endif
 			rb->write(outFile);
 			outFile.close();
@@ -254,22 +250,15 @@ std::unique_ptr<clang::tooling::FrontendActionFactory> newFrontendActionDataFact
 }
 
 int main(int argc, const char** argv) {
-	static llvm::cl::OptionCategory NormaliseExprCategory("Transform tool option");
+	static llvm::cl::OptionCategory NormaliseExprCategory("Norman's Options");
 
-	static llvm::cl::opt<std::string> RunOne(
-	  "run-one", llvm::cl::desc("Dummy option so that the driver does not have to be changed"),
-	  llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
-
-	static llvm::cl::opt<std::string> BaseFilename(
-	  "basename", llvm::cl::desc("Name of the input file to be used for output directory name"),
-	  llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
 	static llvm::cl::opt<std::string> filter("filter", llvm::cl::desc("Path to the file containing the function filter"),
 	                                         llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
-	static llvm::cl::opt<std::string> OutputDir("o",
-	                                            llvm::cl::desc("Path to the directory in which output should be placed"),
-	                                            llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
+	static llvm::cl::opt<std::string> Output("o", llvm::cl::desc("Where to place the output"),
+	                                         llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
 
 	llvm::cl::HideUnrelatedOptions(NormaliseExprCategory);
+
 #if LLVM_VERSION_MAJOR > 12
 	auto op = clang::tooling::CommonOptionsParser::create(argc, argv, NormaliseExprCategory);
 	if(!op) {
@@ -283,13 +272,8 @@ int main(int argc, const char** argv) {
 #endif
 
 	if(auto bl = FunctionFilter::from_file(filter.getValue())) {
-		output_directory = fmt::format("{}/{}-output-product", OutputDir.getValue(),
-		                               static_cast<fs::path>(BaseFilename.getValue()).stem().string());
-		if(!fs::is_directory(output_directory) || !fs::exists(output_directory)) {
-			fs::create_directory(output_directory);
-		}
-
-		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(std::move(*bl))));
+		int result =
+		  Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(std::string_view{Output}, std::move(*bl))));
 
 		return result;
 	} else {
