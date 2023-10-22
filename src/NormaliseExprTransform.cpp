@@ -39,24 +39,20 @@
 #include <string>
 #include <vector>
 
-namespace fs = std::filesystem;
 using namespace clang;
-
-Rewriter rewriter;
-
-bool rewritten = false; // flag to be set if our normalisation pass was able to rewrite anything in the original file
 
 class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
 	ASTContext* astContext;
 	FunctionFilter const& functionFilter;
+	Rewriter& rewriter;
 	Rewriter::RewriteOptions onlyRemoveOld;
 	std::vector<std::string> to_hoist;
 
 public:
-	explicit NormaliseExprVisitor(CompilerInstance* CI, FunctionFilter const& functionFilter)
+	explicit NormaliseExprVisitor(CompilerInstance* CI, FunctionFilter const& functionFilter, Rewriter& rewriter)
 	  : astContext(&(CI->getASTContext()))
-	  , functionFilter(functionFilter) {
-		rewriter.setSourceMgr(astContext->getSourceManager(), astContext->getLangOpts());
+	  , functionFilter(functionFilter)
+	  , rewriter(rewriter) {
 		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
 		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
 	}
@@ -85,7 +81,6 @@ public:
 				}
 				rewriter.RemoveText(arg->getSourceRange(), onlyRemoveOld);
 				rewriter.InsertTextAfter(arg->getSourceRange().getBegin(), output_pair->expression);
-				rewritten = true;
 
 				logln("Transformation applied at: ", DisplaySourceLoc(astContext, arg->getBeginLoc()));
 			} else {
@@ -122,7 +117,6 @@ public:
 			}                                                                                                                \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), output_pair->expression);                            \
-			rewritten = true;                                                                                                \
                                                                                                                        \
 			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
 			return true;                                                                                                     \
@@ -138,7 +132,6 @@ public:
 		if(auto output = transform##type(astContext, node)) {                                                              \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), *output);                                            \
-			rewritten = true;                                                                                                \
                                                                                                                        \
 			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
 			return true;                                                                                                     \
@@ -190,39 +183,39 @@ class NormaliseExprASTConsumer final : public ASTConsumer {
 	NormaliseExprVisitor visitor;
 
 public:
-	explicit NormaliseExprASTConsumer(CompilerInstance* CI, FunctionFilter const& functionFilter)
-	  : visitor{CI, functionFilter} { }
+	explicit NormaliseExprASTConsumer(CompilerInstance* CI, FunctionFilter const& functionFilter, Rewriter& rewriter)
+	  : visitor{CI, functionFilter, rewriter} { }
 
 	void HandleTranslationUnit(ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
 };
 
-class NormaliseExprFrontendAction : public ASTFrontendAction {
+class NormaliseExprFrontendAction final : public ASTFrontendAction {
 	std::string_view output;
 	FunctionFilter const& functionFilter;
+	Rewriter rewriter;
 
 public:
 	NormaliseExprFrontendAction(std::string_view output, FunctionFilter const& functionFilter)
 	  : output(output)
 	  , functionFilter(functionFilter) { }
 
-	virtual std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) final {
-		return std::unique_ptr<clang::ASTConsumer>(new NormaliseExprASTConsumer(&CI, functionFilter));
+	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) override {
+		return std::make_unique<NormaliseExprASTConsumer>(&CI, functionFilter, rewriter);
+	}
+
+	bool PrepareToExecuteAction(CompilerInstance& CI) override {
+		rewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
+		return ASTFrontendAction::PrepareToExecuteAction(CI);
 	}
 
 	void EndSourceFileAction() override {
-		if(!rewritten) { // early exit if nothing has been rewritten so as to not try to make a buffer etc.
-			return;
-		}
-		SourceManager& SM = rewriter.getSourceMgr();
-		const RewriteBuffer* rb = rewriter.getRewriteBufferFor(SM.getMainFileID());
-
-		if(rb) {
+		if(RewriteBuffer const* rb = rewriter.getRewriteBufferFor(rewriter.getSourceMgr().getMainFileID())) {
 			std::error_code error_code;
-#if LLVM_VERSION_MAJOR > 12
-			llvm::raw_fd_ostream outFile(output, error_code, llvm::sys::fs::OF_None);
-#else
-			llvm::raw_fd_ostream outFile(output, error_code, llvm::sys::fs::F_None);
-#endif
+			llvm::raw_fd_ostream outFile{output, error_code};
+			if(error_code) {
+				logln(error_code.message());
+				std::exit(1);
+			}
 			rb->write(outFile);
 			outFile.close();
 		}
@@ -245,8 +238,7 @@ public:
 
 template <typename T, typename... V>
 std::unique_ptr<clang::tooling::FrontendActionFactory> newFrontendActionDataFactory(V&&... args) {
-	return std::unique_ptr<clang::tooling::FrontendActionFactory>(
-	  new FrontendActionDataFactory<T, V...>{std::forward<V>(args)...});
+	return std::make_unique<FrontendActionDataFactory<T, V...>>(std::forward<V>(args)...);
 }
 
 int main(int argc, const char** argv) {
