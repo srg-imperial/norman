@@ -43,7 +43,7 @@ std::optional<TransformationResult> transformLOrOperator(clang::ASTContext* astC
 		}
 	}
 
-	std::string var_name = uid(astContext, "_LOr");
+	std::string var_name = utils::uid(astContext, "_LOr");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *astContext)) {
 		if(rhs_val) {

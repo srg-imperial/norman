@@ -54,7 +54,7 @@ std::optional<std::string> transformIfStmt(clang::ASTContext* astContext, clang:
 		}
 		return {std::move(result)};
 	} else {
-		std::string var_name = uid(astContext, "_IfCond");
+		std::string var_name = utils::uid(astContext, "_IfCond");
 		clang::VarDecl* vd = clang::VarDecl::Create(
 		  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 		  &astContext->Idents.get(var_name), ifStmt->getCond()->getType(), nullptr, clang::StorageClass::SC_None);

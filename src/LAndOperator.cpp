@@ -45,7 +45,7 @@ std::optional<TransformationResult> transformLAndOperator(clang::ASTContext* ast
 		}
 	}
 
-	std::string var_name = uid(astContext, "_LAnd");
+	std::string var_name = utils::uid(astContext, "_LAnd");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *astContext)) {
 		if(rhs_val) {

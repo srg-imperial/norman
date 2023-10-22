@@ -50,7 +50,7 @@ std::optional<std::string> transformWhileStmt(clang::ASTContext* astContext, cla
 		append_as_compound(result, astContext, body);
 		return {std::move(result)};
 	} else if(!checks::naked_continue(body)) {
-		std::string var_name = uid(astContext, "_WhileCond");
+		std::string var_name = utils::uid(astContext, "_WhileCond");
 		auto cond_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
 		                                            astContext->getSourceManager(), astContext->getLangOpts());
 

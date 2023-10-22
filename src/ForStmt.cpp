@@ -56,7 +56,7 @@ namespace {
 				  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(inc->IgnoreParens()->getSourceRange()),
 				                              astContext->getSourceManager(), astContext->getLangOpts());
 				if(checks::naked_continue(body)) {
-					std::string var_name = uid(astContext, "_ForStmt");
+					std::string var_name = utils::uid(astContext, "_ForStmt");
 					out = fmt::format_to(out, "_Bool {} = 0;", var_name);
 					transform_cond();
 					out = fmt::format_to(out, "{{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, inc_str, var_name);

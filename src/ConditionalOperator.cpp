@@ -38,7 +38,7 @@ std::optional<TransformationResult> transformConditionalOperator(clang::ASTConte
 		}
 	}
 
-	std::string var_name = uid(astContext, "_CExpr");
+	std::string var_name = utils::uid(astContext, "_CExpr");
 
 	auto const expr_type = cop->getType();
 	if(expr_type->isVoidType()) {

@@ -21,7 +21,7 @@ std::optional<TransformationResult> transformCallArg(clang::ASTContext* astConte
 		return {};
 	}
 
-	std::string var_name = uid(astContext, "_CallArg");
+	std::string var_name = utils::uid(astContext, "_CallArg");
 
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),

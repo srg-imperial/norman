@@ -102,7 +102,7 @@ std::optional<std::string> transformSwitchStmt(clang::ASTContext* astContext, cl
 
 	clang::Expr* cond = switchStmt->getCond();
 
-	auto var_name = uid(astContext, "_Switch");
+	auto var_name = utils::uid(astContext, "_Switch");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &astContext->Idents.get(var_name), cond->getType(), nullptr, clang::StorageClass::SC_None);

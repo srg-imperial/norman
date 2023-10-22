@@ -34,7 +34,7 @@ std::optional<std::string> transformReturnStmt(clang::ASTContext* astContext, cl
 		                                                astContext->getSourceManager(), astContext->getLangOpts()))};
 	}
 
-	std::string var_name = uid(astContext, "_Return");
+	std::string var_name = utils::uid(astContext, "_Return");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &astContext->Idents.get(var_name), returnStmt->getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);
