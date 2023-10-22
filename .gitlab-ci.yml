@@ -102,7 +102,6 @@ build-prebuilt:
 #       -DCMAKE_C_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror"
 #       -DCMAKE_CXX_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined"
 #       -DLLVM_DIR=$(llvm-config-${LLVM} --libdir)
-#       -DCOREUTILS_SOURCE_DIR=/coreutils
 #       ..
 #     - ninja -j4
 #     - ASAN_OPTIONS=detect_leaks=0 ctest --output-on-failure

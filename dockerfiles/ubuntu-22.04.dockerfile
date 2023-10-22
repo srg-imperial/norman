@@ -107,6 +107,5 @@ RUN \
     -DCMAKE_C_FLAGS='-Werror' \
     -DCMAKE_CXX_FLAGS='-Werror' \
     -DLLVM_DIR=$(llvm-config-${LLVM} --libdir) \
-    -DCOREUTILS_SOURCE_DIR=/coreutils \
     ../ \
   && sh -c "exec ninja -j${JOBS}"
