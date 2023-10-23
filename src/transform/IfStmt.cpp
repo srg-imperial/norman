@@ -29,6 +29,29 @@ namespace {
 			                                           astContext->getSourceManager(), astContext->getLangOpts()));
 		}
 	}
+
+	void append_else(std::string& result, clang::ASTContext* astContext, clang::Stmt* stmt) {
+		if(!stmt) {
+			return;
+		}
+
+		fmt::format_to(std::back_inserter(result), "else");
+		if(auto ifStmt = llvm::dyn_cast<clang::IfStmt>(stmt)) {
+			if(auto rewritten = transform::transformIfStmt(astContext, ifStmt)) {
+				fmt::format_to(std::back_inserter(result), "{{\n{}\n}}", *rewritten);
+			} else {
+				append_as_compound(result, astContext, stmt);
+			}
+		} else if(isa<clang::CompoundStmt>(stmt)) {
+			fmt::format_to(std::back_inserter(result), "{}",
+			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
+			                                           astContext->getSourceManager(), astContext->getLangOpts()));
+		} else {
+			fmt::format_to(std::back_inserter(result), "{{\n{}\n}}",
+			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
+			                                           astContext->getSourceManager(), astContext->getLangOpts()));
+		}
+	}
 } // namespace
 
 std::optional<std::string> transform::transformIfStmt(clang::ASTContext* astContext, clang::IfStmt* ifStmt) {
@@ -47,10 +70,7 @@ std::optional<std::string> transform::transformIfStmt(clang::ASTContext* astCont
 		  fmt::format("if({})", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
 		                                                    astContext->getSourceManager(), astContext->getLangOpts()));
 		append_as_compound(result, astContext, then_stmt);
-		if(else_stmt) {
-			fmt::format_to(std::back_inserter(result), "else");
-			append_as_compound(result, astContext, else_stmt);
-		}
+		append_else(result, astContext, else_stmt);
 		return {std::move(result)};
 	} else {
 		std::string var_name = util::uid(astContext, "_IfCond");
@@ -63,10 +83,7 @@ std::optional<std::string> transform::transformIfStmt(clang::ASTContext* astCont
 		                                                      astContext->getSourceManager(), astContext->getLangOpts()),
 		                          var_name);
 		append_as_compound(result, astContext, then_stmt);
-		if(else_stmt) {
-			fmt::format_to(std::back_inserter(result), "else");
-			append_as_compound(result, astContext, else_stmt);
-		}
+		append_else(result, astContext, else_stmt);
 		return {std::move(result)};
 	}
 }
