@@ -14,6 +14,7 @@ add_executable(norman
   transform/LOrOperator.cpp
   transform/ParenExpr.cpp
   transform/ReturnStmt.cpp
+  transform/StmtExpr.cpp
   transform/StringLiteral.cpp
   transform/SwitchStmt.cpp
   transform/VarDecl.cpp

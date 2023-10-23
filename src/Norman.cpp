@@ -8,6 +8,7 @@
 #include "transform/LOrOperator.h"
 #include "transform/ParenExpr.h"
 #include "transform/ReturnStmt.h"
+#include "transform/StmtExpr.h"
 #include "transform/StringLiteral.h"
 #include "transform/SwitchStmt.h"
 #include "transform/VarDecl.h"
@@ -148,6 +149,7 @@ public:
 	TraverseExprFn(LAndOperator, BinaryOperator);
 	TraverseExprFn(LOrOperator, BinaryOperator);
 	TraverseExprFn(ParenExpr, ParenExpr);
+	TraverseExprFn(StmtExpr, StmtExpr);
 	TraverseExprFn(StringLiteral, StringLiteral);
 
 	TraverseStmtFn(DoStmt);
