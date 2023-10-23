@@ -24,7 +24,7 @@ namespace {
 			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
 			                                           astContext->getSourceManager(), astContext->getLangOpts()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{}\n}}",
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
 			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
 			                                           astContext->getSourceManager(), astContext->getLangOpts()));
 		}
@@ -47,7 +47,7 @@ namespace {
 			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
 			                                           astContext->getSourceManager(), astContext->getLangOpts()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{}\n}}",
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
 			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
 			                                           astContext->getSourceManager(), astContext->getLangOpts()));
 		}
