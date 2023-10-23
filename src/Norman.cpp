@@ -216,7 +216,7 @@ public:
 			std::error_code error_code;
 			llvm::raw_fd_ostream outFile{output, error_code};
 			if(error_code) {
-				logln(error_code.message());
+				llvm::errs() << error_code.message();
 				std::exit(1);
 			}
 			rb->write(outFile);
@@ -257,7 +257,7 @@ int main(int argc, const char** argv) {
 #if LLVM_VERSION_MAJOR > 12
 	auto op = clang::tooling::CommonOptionsParser::create(argc, argv, NormaliseExprCategory);
 	if(!op) {
-		logln("Could not create options parser!\n");
+		llvm::errs() << "Could not create options parser!\n";
 		return EXIT_FAILURE;
 	}
 	clang::tooling::ClangTool Tool(op->getCompilations(), op->getSourcePathList()[0]);
@@ -272,7 +272,7 @@ int main(int argc, const char** argv) {
 
 		return result;
 	} else {
-		logln("Could not open filter file!\n");
+		llvm::errs() << "Could not open filter file!\n";
 		return EXIT_FAILURE;
 	}
 }
