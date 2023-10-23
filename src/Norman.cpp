@@ -27,6 +27,7 @@
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/FileSystem.h>
+#include <llvm/Support/InitLLVM.h>
 
 #include <fmt/format.h>
 
@@ -245,6 +246,8 @@ std::unique_ptr<clang::tooling::FrontendActionFactory> newFrontendActionDataFact
 }
 
 int main(int argc, const char** argv) {
+	llvm::InitLLVM x{argc, argv};
+
 	static llvm::cl::OptionCategory NormaliseExprCategory("Norman's Options");
 
 	static llvm::cl::opt<std::string> filter("filter", llvm::cl::desc("Path to the file containing the function filter"),
