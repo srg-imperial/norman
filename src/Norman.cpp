@@ -94,6 +94,8 @@ public:
 
 	bool TraverseNullStmt(NullStmt* nullstmt) {
 		rewriter.RemoveText(nullstmt->getSourceRange(), onlyRemoveOld);
+		logln("Transformation applied at: ", DisplaySourceLoc(astContext, nullstmt->getBeginLoc()));
+
 		return true;
 	}
 
@@ -163,6 +165,8 @@ public:
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {
 				rewriter.RemoveText(parenExpr->getLParen(), onlyRemoveOld);
 				rewriter.RemoveText(parenExpr->getRParen(), onlyRemoveOld);
+				logln("Transformation applied at: ", DisplaySourceLoc(astContext, parenExpr->getBeginLoc()));
+
 				stmt = parenExpr->getSubExpr();
 			}
 			if(!TraverseStmt(stmt)) {
