@@ -194,14 +194,14 @@ public:
 };
 
 class NormaliseExprFrontendAction final : public ASTFrontendAction {
-	std::string_view output;
 	FunctionFilter const& functionFilter;
 	Rewriter rewriter;
+	bool& rewritten;
 
 public:
-	NormaliseExprFrontendAction(std::string_view output, FunctionFilter const& functionFilter)
-	  : output(output)
-	  , functionFilter(functionFilter) { }
+	NormaliseExprFrontendAction(bool* rewritten, FunctionFilter const* functionFilter)
+	  : functionFilter{*functionFilter}
+	  , rewritten{*rewritten} { }
 
 	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) override {
 		return std::make_unique<NormaliseExprASTConsumer>(&CI, functionFilter, rewriter);
@@ -214,14 +214,19 @@ public:
 
 	void EndSourceFileAction() override {
 		if(RewriteBuffer const* rb = rewriter.getRewriteBufferFor(rewriter.getSourceMgr().getMainFileID())) {
+			auto name = rewriter.getSourceMgr().getFileEntryForID(rewriter.getSourceMgr().getMainFileID())->getName();
+
 			std::error_code error_code;
-			llvm::raw_fd_ostream outFile{output, error_code};
+			llvm::raw_fd_ostream outFile{name, error_code};
 			if(error_code) {
-				llvm::errs() << error_code.message();
+				llvm::errs() << error_code.message() << "\n";
 				std::exit(1);
 			}
 			rb->write(outFile);
 			outFile.close();
+			rewritten = true;
+		} else {
+			rewritten = false;
 		}
 	}
 };
@@ -248,34 +253,46 @@ std::unique_ptr<clang::tooling::FrontendActionFactory> newFrontendActionDataFact
 int main(int argc, const char** argv) {
 	llvm::InitLLVM x{argc, argv};
 
-	static llvm::cl::OptionCategory NormaliseExprCategory("Norman's Options");
+	static llvm::cl::OptionCategory NormanOptionCategory("Norman's Options");
 
-	static llvm::cl::opt<std::string> filter("filter", llvm::cl::desc("Path to the file containing the function filter"),
-	                                         llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
-	static llvm::cl::opt<std::string> Output("o", llvm::cl::desc("Where to place the output"),
-	                                         llvm::cl::cat(NormaliseExprCategory), llvm::cl::Required);
+	static llvm::cl::opt<std::string> filterPath(
+	  "filter", llvm::cl::desc("Path to the file containing a function filter"), llvm::cl::cat(NormanOptionCategory));
 
-	llvm::cl::HideUnrelatedOptions(NormaliseExprCategory);
+	llvm::cl::HideUnrelatedOptions(NormanOptionCategory);
 
 #if LLVM_VERSION_MAJOR > 12
-	auto op = clang::tooling::CommonOptionsParser::create(argc, argv, NormaliseExprCategory);
+	auto op = clang::tooling::CommonOptionsParser::create(argc, argv, NormanOptionCategory);
 	if(!op) {
 		llvm::errs() << "Could not create options parser!\n";
 		return EXIT_FAILURE;
 	}
-	clang::tooling::ClangTool Tool(op->getCompilations(), op->getSourcePathList()[0]);
 #else
-	clang::tooling::CommonOptionsParser op(argc, argv, NormaliseExprCategory);
-	clang::tooling::ClangTool Tool(op.getCompilations(), op.getSourcePathList()[0]);
+	std::optional<clang::tooling::CommonOptionsParser> op{{argc, argv, NormanOptionCategory}};
 #endif
 
-	if(auto bl = FunctionFilter::from_file(filter.getValue())) {
-		int result =
-		  Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(std::string_view{Output}, std::move(*bl))));
-
-		return result;
-	} else {
-		llvm::errs() << "Could not open filter file!\n";
-		return EXIT_FAILURE;
+	FunctionFilter filter;
+	if(filterPath.hasArgStr()) {
+		if(auto bl = FunctionFilter::from_file(filterPath.getValue())) {
+			filter = std::move(*bl);
+		} else {
+			llvm::errs() << "Could not open filter file!\n";
+			return EXIT_FAILURE;
+		}
 	}
+
+	bool rewritten;
+	std::uint64_t count = 0;
+	do {
+		clang::tooling::ClangTool Tool{op->getCompilations(), op->getSourcePathList()[0]};
+		// disable printing warnings
+		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
+
+		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(&rewritten, &filter)));
+		if(result != EXIT_SUCCESS) {
+			return result;
+		}
+		++count;
+		logln(rewritten ? "File was rewritten" : "No change");
+	} while(rewritten);
+	llvm::outs() << "Norman ran " << count << " times to normalize your source code.\n";
 }
