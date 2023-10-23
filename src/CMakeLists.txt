@@ -3,6 +3,7 @@ add_executable(norman
   check/Label.cpp
   check/NakedBreak.cpp
   check/NakedContinue.cpp
+  check/Reference.cpp
   transform/CallArg.cpp
   transform/CommaOperator.cpp
   transform/ConditionalOperator.cpp
@@ -15,6 +16,7 @@ add_executable(norman
   transform/ReturnStmt.cpp
   transform/StringLiteral.cpp
   transform/SwitchStmt.cpp
+  transform/VarDecl.cpp
   transform/WhileStmt.cpp
 )
 

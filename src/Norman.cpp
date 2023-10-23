@@ -10,6 +10,7 @@
 #include "transform/ReturnStmt.h"
 #include "transform/StringLiteral.h"
 #include "transform/SwitchStmt.h"
+#include "transform/VarDecl.h"
 #include "transform/WhileStmt.h"
 #include "util/FunctionFilter.h"
 #include "util/Log.h"
@@ -154,6 +155,7 @@ public:
 	TraverseStmtFn(IfStmt);
 	TraverseStmtFn(ReturnStmt);
 	TraverseStmtFn(SwitchStmt);
+	TraverseStmtFn(VarDecl);
 	TraverseStmtFn(WhileStmt);
 
 	bool TraverseCompoundStmt(CompoundStmt* cstmt) {
@@ -271,9 +273,9 @@ int main(int argc, const char** argv) {
 #endif
 
 	FunctionFilter filter;
-	if(filterPath.hasArgStr()) {
-		if(auto bl = FunctionFilter::from_file(filterPath.getValue())) {
-			filter = std::move(*bl);
+	if(auto const& path = filterPath.getValue(); !path.empty()) {
+		if(auto parsed = FunctionFilter::from_file(path)) {
+			filter = std::move(*parsed);
 		} else {
 			llvm::errs() << "Could not open filter file!\n";
 			return EXIT_FAILURE;
