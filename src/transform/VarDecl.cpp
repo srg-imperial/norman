@@ -33,11 +33,12 @@ std::optional<std::string> transform::transformVarDecl(clang::ASTContext* astCon
 		if(varDecl->isFileVarDecl() || varDecl->isStaticLocal()) {
 			// in C file vars and static locals have to be constant initialized
 		} else if(varDecl->isLocalVarDecl()) {
-			if(!llvm::isa<clang::InitListExpr>(init)) {
-				if(checks::reference(init, varDecl)) {
-					return {split(astContext, varDecl)};
+			if(checks::reference(init, varDecl)) {
+				if(llvm::isa<clang::InitListExpr>(init)) {
+					throw "unimplemented";
 				} else {
-					// TODO: add a configuration switch
+					// SLIGHT SEMANTIC CHANGE if the variable is `const`
+					// TODO: only transform if there is a reason to
 					return {split(astContext, varDecl)};
 				}
 			}
