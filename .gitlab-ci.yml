@@ -3,6 +3,9 @@ stages:
   - test
   - publish
 
+variables:
+  GODEBUG: "http2client=0"  # https://github.com/GoogleContainerTools/kaniko/issues/2751
+
 .full-matrix:
   parallel:
     matrix:
