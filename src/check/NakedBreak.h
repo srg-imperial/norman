@@ -3,5 +3,5 @@
 #include <clang/AST/AST.h>
 
 namespace checks {
-	clang::BreakStmt* naked_break(clang::Stmt* stmt);
+	clang::BreakStmt* naked_break(clang::Stmt& stmt);
 } // namespace checks

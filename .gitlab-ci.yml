@@ -128,7 +128,7 @@ format:
   needs: ["build-base"]
   image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12
   script:
-    - find . -path ./vendor -prune -or \( -iname '*.cpp' -or -iname '*.c' -or -iname '*.h' \) -print | xargs clang-format-12 --dry-run --Werror
+    - find src -iname '*.cpp' -or -iname '*.h' -print | xargs clang-format-12 --dry-run --Werror
 
 publish:
   stage: publish

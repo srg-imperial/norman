@@ -3,5 +3,5 @@
 #include <clang/AST/AST.h>
 
 namespace checks {
-	clang::LabelStmt* label(clang::Stmt* stmt);
+	clang::LabelStmt* label(clang::Stmt& stmt);
 } // namespace checks

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "../BaseConfig.h"
 #include "../Norman.h"
+
+#include <rapidjson/document.h>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -8,5 +11,10 @@
 #include <optional>
 
 namespace transform {
-	std::optional<std::string> transformDoStmt(clang::ASTContext* astContext, clang::DoStmt* doStmt);
-}
+	struct DoStmtConfig : BaseConfig {
+		static std::optional<DoStmtConfig> parse(rapidjson::Value const&);
+	};
+
+	std::optional<std::string> transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext,
+	                                           clang::DoStmt& doStmt);
+} // namespace transform

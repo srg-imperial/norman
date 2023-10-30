@@ -1,5 +1,6 @@
 add_executable(norman
   Norman.cpp
+  Config.cpp
   check/Label.cpp
   check/NakedBreak.cpp
   check/NakedContinue.cpp

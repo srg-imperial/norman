@@ -7,13 +7,22 @@
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
-std::optional<TransformationResult> transform::transformStringLiteral(clang::ASTContext* astContext,
-                                                                      clang::StringLiteral* strLit) {
-	if(strLit->getNumConcatenated() != 1) {
+std::optional<transform::StringLiteralConfig> transform::StringLiteralConfig::parse(rapidjson::Value const& v) {
+	return BaseConfig::parse<transform::StringLiteralConfig>(v, [](auto& config, auto const& member) { return false; });
+}
+
+std::optional<TransformationResult> transform::transformStringLiteral(StringLiteralConfig const& config,
+                                                                      clang::ASTContext& astContext,
+                                                                      clang::StringLiteral& strLit) {
+	if(!config.enabled) {
+		return {};
+	}
+
+	if(strLit.getNumConcatenated() != 1) {
 		std::string result;
 		{
 			llvm::raw_string_ostream out{result};
-			strLit->printPretty(out, nullptr, astContext->getPrintingPolicy());
+			strLit.printPretty(out, nullptr, astContext.getPrintingPolicy());
 		}
 		return TransformationResult{std::move(result), {}};
 	} else {

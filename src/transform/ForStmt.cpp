@@ -14,7 +14,9 @@
 #include <iterator>
 #include <string>
 
-using llvm::isa;
+std::optional<transform::ForStmtConfig> transform::ForStmtConfig::parse(rapidjson::Value const& v) {
+	return BaseConfig::parse<transform::ForStmtConfig>(v, [](auto& config, auto const& member) { return false; });
+}
 
 namespace {
 	template <typename Out> class ForTransformer {
@@ -28,12 +30,12 @@ namespace {
 		Out out;
 
 	public:
-		ForTransformer(clang::ASTContext* astContext, clang::ForStmt* forStmt, Out out)
-		  : astContext{astContext}
-		  , init{forStmt->getInit()}
-		  , cond{forStmt->getCond()}
-		  , inc{forStmt->getInc()}
-		  , body{forStmt->getBody()}
+		ForTransformer(clang::ASTContext& astContext, clang::ForStmt& forStmt, Out out)
+		  : astContext{&astContext}
+		  , init{forStmt.getInit()}
+		  , cond{forStmt.getCond()}
+		  , inc{forStmt.getInc()}
+		  , body{forStmt.getBody()}
 		  , out{std::move(out)} { }
 
 		void transform() {
@@ -54,8 +56,8 @@ namespace {
 				auto inc_str =
 				  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(inc->IgnoreParens()->getSourceRange()),
 				                              astContext->getSourceManager(), astContext->getLangOpts());
-				if(checks::naked_continue(body)) {
-					std::string var_name = util::uid(astContext, "_ForStmt");
+				if(checks::naked_continue(*body)) {
+					std::string var_name = util::uid(*astContext, "_ForStmt");
 					out = fmt::format_to(out, "_Bool {} = 0;", var_name);
 					transform_cond();
 					out = fmt::format_to(out, "{{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, inc_str, var_name);
@@ -85,7 +87,7 @@ namespace {
 		}
 
 		void transform_body() {
-			if(isa<clang::CompoundStmt>(body)) {
+			if(llvm::isa<clang::CompoundStmt>(body)) {
 				out = fmt::format_to(out, "{}",
 				                     clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(body->getSourceRange()),
 				                                                 astContext->getSourceManager(), astContext->getLangOpts()));
@@ -98,7 +100,12 @@ namespace {
 	};
 } // namespace
 
-std::optional<std::string> transform::transformForStmt(clang::ASTContext* astContext, clang::ForStmt* forStmt) {
+std::optional<std::string> transform::transformForStmt(ForStmtConfig const& config, clang::ASTContext& astContext,
+                                                       clang::ForStmt& forStmt) {
+	if(!config.enabled) {
+		return {};
+	}
+
 	std::string result;
 
 	ForTransformer{astContext, forStmt, std::back_inserter(result)}.transform();

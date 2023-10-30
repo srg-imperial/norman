@@ -18,9 +18,9 @@ namespace checks {
 		};
 	} // namespace
 
-	clang::ContinueStmt* naked_continue(clang::Stmt* stmt) {
+	clang::ContinueStmt* naked_continue(clang::Stmt& stmt) {
 		NakedContinue visitor;
-		visitor.TraverseStmt(stmt);
+		visitor.TraverseStmt(&stmt);
 		return visitor.continueStmt;
 	}
 } // namespace checks

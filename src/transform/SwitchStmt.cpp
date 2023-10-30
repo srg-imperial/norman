@@ -20,7 +20,9 @@
 #include <string>
 #include <vector>
 
-using llvm::isa;
+std::optional<transform::SwitchStmtConfig> transform::SwitchStmtConfig::parse(rapidjson::Value const& v) {
+	return BaseConfig::parse<transform::SwitchStmtConfig>(v, [](auto& config, auto const& member) { return false; });
+}
 
 namespace {
 	class NakedCaseOrDefault : public clang::RecursiveASTVisitor<NakedCaseOrDefault> {
@@ -48,7 +50,7 @@ namespace {
 		bool TraverseSwitchStmt(clang::SwitchStmt*) { return true; }
 	};
 
-	void printStmts(std::string& result, clang::ASTContext* astContext,
+	void printStmts(std::string& result, clang::ASTContext& astContext,
 	                std::vector<std::pair<clang::Stmt*, bool>> const& stmts, std::size_t startIndex) {
 		bool hasBreak = false;
 		std::size_t end = stmts.size();
@@ -76,7 +78,7 @@ namespace {
 			fmt::format_to(
 			  std::back_inserter(result), "{};",
 			  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmts[j].first->getSourceRange()),
-			                              astContext->getSourceManager(), astContext->getLangOpts()));
+			                              astContext.getSourceManager(), astContext.getLangOpts()));
 		}
 
 		if(hasBreak) {
@@ -87,8 +89,12 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* astContext,
-                                                          clang::SwitchStmt* switchStmt) {
+std::optional<std::string> transform::transformSwitchStmt(SwitchStmtConfig const& config, clang::ASTContext& astContext,
+                                                          clang::SwitchStmt& switchStmt) {
+	if(!config.enabled) {
+		return {};
+	}
+
 	// naked continue statements clash with our rewrite, as they are now caught by the `switch' replacement instead of a
 	// surrounding loop
 	if(checks::naked_continue(switchStmt)) {
@@ -100,18 +106,18 @@ std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* ast
 		throw "label found";
 	}
 
-	clang::Expr* cond = switchStmt->getCond();
+	clang::Expr* cond = switchStmt.getCond();
 
 	auto var_name = util::uid(astContext, "_Switch");
-	clang::VarDecl* vd = clang::VarDecl::Create(
-	  *astContext, astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
-	  &astContext->Idents.get(var_name), cond->getType(), nullptr, clang::StorageClass::SC_None);
+	clang::VarDecl* vd = clang::VarDecl::Create(astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(),
+	                                            clang::SourceLocation(), &astContext.Idents.get(var_name),
+	                                            cond->getType(), nullptr, clang::StorageClass::SC_None);
 	std::string result =
 	  fmt::format("{} = ({});\n", *vd,
 	              clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-	                                          astContext->getSourceManager(), astContext->getLangOpts()));
+	                                          astContext.getSourceManager(), astContext.getLangOpts()));
 
-	if(clang::CompoundStmt* body = llvm::dyn_cast<clang::CompoundStmt>(switchStmt->getBody())) {
+	if(clang::CompoundStmt* body = llvm::dyn_cast<clang::CompoundStmt>(switchStmt.getBody())) {
 		std::optional<std::size_t> defaultStmtTarget;
 		std::vector<std::pair<std::vector<clang::CaseStmt*>, std::size_t>> caseStmts;
 		std::vector<std::pair<clang::Stmt*, bool>> stmts;
@@ -145,7 +151,7 @@ std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* ast
 				throw "nest case or default statement";
 			}
 
-			stmts.emplace_back(stmt, checks::naked_break(stmt));
+			stmts.emplace_back(stmt, checks::naked_break(*stmt));
 		}
 
 		for(std::size_t i = 0; i < caseStmts.size(); ++i) {
@@ -168,17 +174,17 @@ std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* ast
 					}
 					fmt::format_to(std::back_inserter(result), "({}) <= {} && {} <= ({]})",
 					               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(lhs->getSourceRange()),
-					                                           astContext->getSourceManager(), astContext->getLangOpts()),
+					                                           astContext.getSourceManager(), astContext.getLangOpts()),
 					               var_name, var_name,
 					               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(rhs->getSourceRange()),
-					                                           astContext->getSourceManager(), astContext->getLangOpts()));
+					                                           astContext.getSourceManager(), astContext.getLangOpts()));
 					if(caseStmts[i].first.size() != 1) {
 						fmt::format_to(std::back_inserter(result), ")");
 					}
 				} else {
 					fmt::format_to(std::back_inserter(result), "{} == ({})", var_name,
 					               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(lhs->getSourceRange()),
-					                                           astContext->getSourceManager(), astContext->getLangOpts()));
+					                                           astContext.getSourceManager(), astContext.getLangOpts()));
 				}
 			}
 
@@ -196,8 +202,8 @@ std::optional<std::string> transform::transformSwitchStmt(clang::ASTContext* ast
 		return {fmt::format(
 		  "switch({}) {{\n{};\n}}",
 		  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                              astContext->getSourceManager(), astContext->getLangOpts()),
-		  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(switchStmt->getBody()->getSourceRange()),
-		                              astContext->getSourceManager(), astContext->getLangOpts()))};
+		                              astContext.getSourceManager(), astContext.getLangOpts()),
+		  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(switchStmt.getBody()->getSourceRange()),
+		                              astContext.getSourceManager(), astContext.getLangOpts()))};
 	}
 }

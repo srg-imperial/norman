@@ -14,9 +14,9 @@ namespace checks {
 		};
 	} // namespace
 
-	clang::LabelStmt* label(clang::Stmt* stmt) {
+	clang::LabelStmt* label(clang::Stmt& stmt) {
 		Label visitor;
-		visitor.TraverseStmt(stmt);
+		visitor.TraverseStmt(&stmt);
 		return visitor.labelStmt;
 	}
 } // namespace checks

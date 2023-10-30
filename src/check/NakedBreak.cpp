@@ -19,9 +19,9 @@ namespace checks {
 		};
 	} // namespace
 
-	clang::BreakStmt* naked_break(clang::Stmt* stmt) {
+	clang::BreakStmt* naked_break(clang::Stmt& stmt) {
 		NakedBreak visitor;
-		visitor.TraverseStmt(stmt);
+		visitor.TraverseStmt(&stmt);
 		return visitor.breakStmt;
 	}
 } // namespace checks

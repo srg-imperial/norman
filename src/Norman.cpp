@@ -1,3 +1,4 @@
+#include "Config.h"
 #include "transform/CallArg.h"
 #include "transform/CommaOperator.h"
 #include "transform/ConditionalOperator.h"
@@ -13,7 +14,6 @@
 #include "transform/SwitchStmt.h"
 #include "transform/VarDecl.h"
 #include "transform/WhileStmt.h"
-#include "util/FunctionFilter.h"
 #include "util/Log.h"
 
 #include <clang/AST/AST.h>
@@ -45,27 +45,34 @@ using namespace clang;
 
 class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
 	ASTContext* astContext;
-	FunctionFilter const& functionFilter;
+	Config const& config;
+	Config::ScopedConfig const* scopedConfig{};
 	Rewriter& rewriter;
 	Rewriter::RewriteOptions onlyRemoveOld;
 	std::vector<std::string> to_hoist;
 
 public:
-	explicit NormaliseExprVisitor(CompilerInstance* CI, FunctionFilter const& functionFilter, Rewriter& rewriter)
+	explicit NormaliseExprVisitor(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
 	  : astContext(&(CI->getASTContext()))
-	  , functionFilter(functionFilter)
+	  , config(config)
+	  , scopedConfig(&config.fileScope())
 	  , rewriter(rewriter) {
 		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
 		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
 	}
 
 	bool TraverseFunctionDecl(FunctionDecl* fdecl) {
-		if(functionFilter.skip(fdecl)) {
+		scopedConfig = &config.function(*fdecl);
+		if(!scopedConfig->process) {
 			logln("Skipping function ", fdecl->getName(), DisplaySourceLoc(astContext, fdecl->getBeginLoc()));
 			return true;
 		}
 
-		return RecursiveASTVisitor::TraverseFunctionDecl(fdecl);
+		bool result = RecursiveASTVisitor::TraverseFunctionDecl(fdecl);
+
+		scopedConfig = &config.fileScope();
+
+		return result;
 	}
 
 	bool TraverseEnumDecl(EnumDecl*) { return true; }
@@ -77,7 +84,7 @@ public:
 
 		for(unsigned i = 0, num_args = cexpr->getNumArgs(); i < num_args; i++) {
 			Expr* arg = cexpr->getArg(i);
-			if(auto output_pair = transform::transformCallArg(astContext, arg)) {
+			if(auto output_pair = transform::transformCallArg(scopedConfig->configCallArg, *astContext, *arg)) {
 				if(!output_pair->to_hoist.empty()) {
 					to_hoist.emplace_back(std::move(output_pair->to_hoist));
 				}
@@ -115,7 +122,7 @@ public:
 	bool Traverse##kind(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output_pair = transform::transform##kind(astContext, node)) {                                              \
+		if(auto output_pair = transform::transform##kind(scopedConfig->config##kind, *astContext, *node)) {                \
 			if(!output_pair->to_hoist.empty()) {                                                                             \
 				to_hoist.emplace_back(std::move(output_pair->to_hoist));                                                       \
 			}                                                                                                                \
@@ -133,7 +140,7 @@ public:
 	bool Traverse##type(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output = transform::transform##type(astContext, node)) {                                                   \
+		if(auto output = transform::transform##type(scopedConfig->config##type, *astContext, *node)) {                     \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), *output);                                            \
                                                                                                                        \
@@ -191,24 +198,24 @@ class NormaliseExprASTConsumer final : public ASTConsumer {
 	NormaliseExprVisitor visitor;
 
 public:
-	explicit NormaliseExprASTConsumer(CompilerInstance* CI, FunctionFilter const& functionFilter, Rewriter& rewriter)
-	  : visitor{CI, functionFilter, rewriter} { }
+	explicit NormaliseExprASTConsumer(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
+	  : visitor{CI, config, rewriter} { }
 
 	void HandleTranslationUnit(ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
 };
 
 class NormaliseExprFrontendAction final : public ASTFrontendAction {
-	FunctionFilter const& functionFilter;
+	Config const& config;
 	Rewriter rewriter;
 	bool& rewritten;
 
 public:
-	NormaliseExprFrontendAction(bool* rewritten, FunctionFilter const* functionFilter)
-	  : functionFilter{*functionFilter}
+	NormaliseExprFrontendAction(bool* rewritten, Config const* config)
+	  : config{*config}
 	  , rewritten{*rewritten} { }
 
 	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) override {
-		return std::make_unique<NormaliseExprASTConsumer>(&CI, functionFilter, rewriter);
+		return std::make_unique<NormaliseExprASTConsumer>(&CI, config, rewriter);
 	}
 
 	bool PrepareToExecuteAction(CompilerInstance& CI) override {
@@ -259,8 +266,8 @@ int main(int argc, const char** argv) {
 
 	static llvm::cl::OptionCategory NormanOptionCategory("Norman's Options");
 
-	static llvm::cl::opt<std::string> filterPath(
-	  "filter", llvm::cl::desc("Path to the file containing a function filter"), llvm::cl::cat(NormanOptionCategory));
+	static llvm::cl::opt<std::string> configPath(
+	  "config", llvm::cl::desc("Path to the file containing a function config"), llvm::cl::cat(NormanOptionCategory));
 
 	llvm::cl::HideUnrelatedOptions(NormanOptionCategory);
 
@@ -274,12 +281,12 @@ int main(int argc, const char** argv) {
 	std::optional<clang::tooling::CommonOptionsParser> op{{argc, argv, NormanOptionCategory}};
 #endif
 
-	FunctionFilter filter;
-	if(auto const& path = filterPath.getValue(); !path.empty()) {
-		if(auto parsed = FunctionFilter::from_file(path)) {
-			filter = std::move(*parsed);
+	Config config;
+	if(auto const& path = configPath.getValue(); !path.empty()) {
+		if(auto parsed = Config::from_file(path)) {
+			config = std::move(*parsed);
 		} else {
-			llvm::errs() << "Could not open filter file!\n";
+			llvm::errs() << "Could not open config file!\n";
 			return EXIT_FAILURE;
 		}
 	}
@@ -291,7 +298,7 @@ int main(int argc, const char** argv) {
 		// disable printing warnings
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
 
-		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(&rewritten, &filter)));
+		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(&rewritten, &config)));
 		if(result != EXIT_SUCCESS) {
 			return result;
 		}
