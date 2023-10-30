@@ -18,6 +18,6 @@ namespace transform {
 		static std::optional<VarDeclConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<std::string> transformVarDecl(VarDeclConfig const& config, clang::ASTContext& astContext,
-	                                            clang::VarDecl& varDecl);
+	StmtTransformResult transformVarDecl(VarDeclConfig const& config, clang::ASTContext& astContext,
+	                                     clang::VarDecl& varDecl);
 } // namespace transform

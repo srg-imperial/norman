@@ -16,6 +16,6 @@ namespace transform {
 		static std::optional<WhileStmtConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<std::string> transformWhileStmt(WhileStmtConfig const& config, clang::ASTContext& astContext,
-	                                              clang::WhileStmt& whileStmt);
+	StmtTransformResult transformWhileStmt(WhileStmtConfig const& config, clang::ASTContext& astContext,
+	                                       clang::WhileStmt& whileStmt);
 } // namespace transform

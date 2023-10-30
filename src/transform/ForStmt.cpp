@@ -100,8 +100,8 @@ namespace {
 	};
 } // namespace
 
-std::optional<std::string> transform::transformForStmt(ForStmtConfig const& config, clang::ASTContext& astContext,
-                                                       clang::ForStmt& forStmt) {
+StmtTransformResult transform::transformForStmt(ForStmtConfig const& config, clang::ASTContext& astContext,
+                                                clang::ForStmt& forStmt) {
 	if(!config.enabled) {
 		return {};
 	}

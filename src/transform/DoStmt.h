@@ -15,6 +15,5 @@ namespace transform {
 		static std::optional<DoStmtConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<std::string> transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext,
-	                                           clang::DoStmt& doStmt);
+	StmtTransformResult transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext, clang::DoStmt& doStmt);
 } // namespace transform

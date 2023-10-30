@@ -15,7 +15,6 @@ namespace transform {
 		static std::optional<ConditionalOperatorConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformConditionalOperator(ConditionalOperatorConfig const& config,
-	                                                                 clang::ASTContext& astContext,
-	                                                                 clang::ConditionalOperator& cop);
+	ExprTransformResult transformConditionalOperator(ConditionalOperatorConfig const& config,
+	                                                 clang::ASTContext& astContext, clang::ConditionalOperator& cop);
 } // namespace transform

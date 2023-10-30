@@ -16,6 +16,6 @@ namespace transform {
 		static std::optional<SwitchStmtConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<std::string> transformSwitchStmt(SwitchStmtConfig const& config, clang::ASTContext& astContext,
-	                                               clang::SwitchStmt& switchStmt);
+	StmtTransformResult transformSwitchStmt(SwitchStmtConfig const& config, clang::ASTContext& astContext,
+	                                        clang::SwitchStmt& switchStmt);
 } // namespace transform

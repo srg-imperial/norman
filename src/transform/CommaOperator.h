@@ -15,7 +15,6 @@ namespace transform {
 		static std::optional<CommaOperatorConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformCommaOperator(CommaOperatorConfig const& config,
-	                                                           clang::ASTContext& astContext,
-	                                                           clang::BinaryOperator& binop);
+	ExprTransformResult transformCommaOperator(CommaOperatorConfig const& config, clang::ASTContext& astContext,
+	                                           clang::BinaryOperator& binop);
 } // namespace transform

@@ -20,8 +20,8 @@ std::optional<transform::StmtExprConfig> transform::StmtExprConfig::parse(rapidj
 	return BaseConfig::parse<transform::StmtExprConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult>
-transform::transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& astContext, clang::StmtExpr& stexpr) {
+ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& astContext,
+                                                 clang::StmtExpr& stexpr) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -30,10 +30,9 @@ transform::transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& as
 	clang::QualType stexpr_type = stexpr.getType();
 
 	if(stexpr_type->isVoidType()) {
-		return TransformationResult{
-		  "((void)0)", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(Stmts->getSourceRange()),
-		                                           astContext.getSourceManager(), astContext.getLangOpts())
-		                 .str()};
+		return {"((void)0)", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(Stmts->getSourceRange()),
+		                                                 astContext.getSourceManager(), astContext.getLangOpts())
+		                       .str()};
 	}
 
 	std::string to_hoist;
@@ -55,5 +54,5 @@ transform::transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& as
 	  out, "{}=({});\n}}", var_name,
 	  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(Stmts->body_back()->getSourceRange()),
 	                              astContext.getSourceManager(), astContext.getLangOpts()));
-	return TransformationResult{std::move(var_name), std::move(to_hoist)};
+	return {std::move(var_name), std::move(to_hoist)};
 }

@@ -11,9 +11,8 @@ std::optional<transform::CommaOperatorConfig> transform::CommaOperatorConfig::pa
 	return BaseConfig::parse<transform::CommaOperatorConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult> transform::transformCommaOperator(CommaOperatorConfig const& config,
-                                                                      clang::ASTContext& astContext,
-                                                                      clang::BinaryOperator& binop) {
+ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const& config, clang::ASTContext& astContext,
+                                                      clang::BinaryOperator& binop) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -29,8 +28,8 @@ std::optional<TransformationResult> transform::transformCommaOperator(CommaOpera
 	                              astContext.getSourceManager(), astContext.getLangOpts());
 
 	if(!lhs->HasSideEffects(astContext)) {
-		return TransformationResult{fmt::format("({})", rhs_str), {}};
+		return {fmt::format("({})", rhs_str)};
 	}
 
-	return TransformationResult{fmt::format("({})", rhs_str), fmt::format("{};\n", lhs_str)};
+	return {fmt::format("({})", rhs_str), fmt::format("{};\n", lhs_str)};
 }

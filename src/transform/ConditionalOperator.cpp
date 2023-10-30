@@ -22,9 +22,9 @@ transform::ConditionalOperatorConfig::parse(rapidjson::Value const& v) {
 	  v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult> transform::transformConditionalOperator(ConditionalOperatorConfig const& config,
-                                                                            clang::ASTContext& astContext,
-                                                                            clang::ConditionalOperator& cop) {
+ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorConfig const& config,
+                                                            clang::ASTContext& astContext,
+                                                            clang::ConditionalOperator& cop) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -43,9 +43,9 @@ std::optional<TransformationResult> transform::transformConditionalOperator(Cond
 	bool cond_val;
 	if(cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
 		if(cond->HasSideEffects(astContext)) {
-			return TransformationResult{fmt::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr), ""};
+			return {fmt::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr)};
 		} else {
-			return TransformationResult{fmt::format("({})", cond_val ? texpr : fexpr), ""};
+			return {fmt::format("({})", cond_val ? texpr : fexpr)};
 		}
 	}
 
@@ -53,7 +53,7 @@ std::optional<TransformationResult> transform::transformConditionalOperator(Cond
 
 	auto const expr_type = cop.getType();
 	if(expr_type->isVoidType()) {
-		return TransformationResult{"((void)0)", fmt::format("if({}) {{\n{};\n}} else {{\n{};\n}}\n", cexpr, texpr, fexpr)};
+		return {"((void)0)", fmt::format("if({}) {{\n{};\n}} else {{\n{};\n}}\n", cexpr, texpr, fexpr)};
 	} else {
 		clang::VarDecl* vd = clang::VarDecl::Create(
 		  astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
@@ -61,6 +61,6 @@ std::optional<TransformationResult> transform::transformConditionalOperator(Cond
 
 		std::string to_hoist = fmt::format("{};\nif({}) {{\n{} = ({});\n}} else {{\n{} = ({});\n}}\n", *vd, cexpr, var_name,
 		                                   texpr, var_name, fexpr);
-		return TransformationResult{std::move(var_name), std::move(to_hoist)};
+		return {std::move(var_name), std::move(to_hoist)};
 	}
 }

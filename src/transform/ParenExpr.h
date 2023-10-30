@@ -15,6 +15,6 @@ namespace transform {
 		static std::optional<ParenExprConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext,
-	                                                       clang::ParenExpr& pexpr);
+	ExprTransformResult transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext,
+	                                       clang::ParenExpr& pexpr);
 } // namespace transform

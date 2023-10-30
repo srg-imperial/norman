@@ -89,8 +89,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformSwitchStmt(SwitchStmtConfig const& config, clang::ASTContext& astContext,
-                                                          clang::SwitchStmt& switchStmt) {
+StmtTransformResult transform::transformSwitchStmt(SwitchStmtConfig const& config, clang::ASTContext& astContext,
+                                                   clang::SwitchStmt& switchStmt) {
 	if(!config.enabled) {
 		return {};
 	}

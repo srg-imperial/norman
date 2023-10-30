@@ -11,9 +11,8 @@ std::optional<transform::StringLiteralConfig> transform::StringLiteralConfig::pa
 	return BaseConfig::parse<transform::StringLiteralConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult> transform::transformStringLiteral(StringLiteralConfig const& config,
-                                                                      clang::ASTContext& astContext,
-                                                                      clang::StringLiteral& strLit) {
+ExprTransformResult transform::transformStringLiteral(StringLiteralConfig const& config, clang::ASTContext& astContext,
+                                                      clang::StringLiteral& strLit) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -24,7 +23,7 @@ std::optional<TransformationResult> transform::transformStringLiteral(StringLite
 			llvm::raw_string_ostream out{result};
 			strLit.printPretty(out, nullptr, astContext.getPrintingPolicy());
 		}
-		return TransformationResult{std::move(result), {}};
+		return {std::move(result), {}};
 	} else {
 		return {};
 	}

@@ -34,8 +34,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext,
-                                                      clang::DoStmt& doStmt) {
+StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext,
+                                               clang::DoStmt& doStmt) {
 	if(!config.enabled) {
 		return {};
 	}

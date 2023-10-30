@@ -34,8 +34,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformWhileStmt(WhileStmtConfig const& config, clang::ASTContext& astContext,
-                                                         clang::WhileStmt& whileStmt) {
+StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config, clang::ASTContext& astContext,
+                                                  clang::WhileStmt& whileStmt) {
 	if(!config.enabled) {
 		return {};
 	}

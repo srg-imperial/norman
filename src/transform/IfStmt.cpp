@@ -40,8 +40,9 @@ namespace {
 
 		fmt::format_to(std::back_inserter(result), "else");
 		if(auto ifStmt = llvm::dyn_cast<clang::IfStmt>(stmt)) {
-			if(auto rewritten = transform::transformIfStmt(config, astContext, *ifStmt)) {
-				fmt::format_to(std::back_inserter(result), "{{\n{}\n}}", *rewritten);
+			auto transformResult = transform::transformIfStmt(config, astContext, *ifStmt);
+			if(transformResult.do_rewrite) {
+				fmt::format_to(std::back_inserter(result), "{{\n{}\n}}", transformResult.statement);
 			} else {
 				append_as_compound(result, astContext, *stmt);
 			}
@@ -57,8 +58,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformIfStmt(IfStmtConfig const& config, clang::ASTContext& astContext,
-                                                      clang::IfStmt& ifStmt) {
+StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang::ASTContext& astContext,
+                                               clang::IfStmt& ifStmt) {
 	if(!config.enabled) {
 		return {};
 	}

@@ -17,8 +17,8 @@ std::optional<transform::CallArgConfig> transform::CallArgConfig::parse(rapidjso
 	return BaseConfig::parse<transform::CallArgConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult> transform::transformCallArg(CallArgConfig const& config,
-                                                                clang::ASTContext& astContext, clang::Expr& arg) {
+ExprTransformResult transform::transformCallArg(CallArgConfig const& config, clang::ASTContext& astContext,
+                                                clang::Expr& arg) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -40,5 +40,5 @@ std::optional<TransformationResult> transform::transformCallArg(CallArgConfig co
 	              clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(arg.getSourceRange()),
 	                                          astContext.getSourceManager(), astContext.getLangOpts()));
 
-	return TransformationResult{std::move(var_name), std::move(to_hoist)};
+	return {std::move(var_name), std::move(to_hoist)};
 }

@@ -46,8 +46,8 @@ namespace {
 	}
 } // namespace
 
-std::optional<std::string> transform::transformVarDecl(VarDeclConfig const& config, clang::ASTContext& astContext,
-                                                       clang::VarDecl& varDecl) {
+StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, clang::ASTContext& astContext,
+                                                clang::VarDecl& varDecl) {
 	if(!config.enabled) {
 		return {};
 	}

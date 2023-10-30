@@ -15,7 +15,6 @@ namespace transform {
 		static std::optional<StringLiteralConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformStringLiteral(StringLiteralConfig const& config,
-	                                                           clang::ASTContext& astContext,
-	                                                           clang::StringLiteral& strLit);
+	ExprTransformResult transformStringLiteral(StringLiteralConfig const& config, clang::ASTContext& astContext,
+	                                           clang::StringLiteral& strLit);
 } // namespace transform

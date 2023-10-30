@@ -13,8 +13,8 @@ std::optional<transform::ParenExprConfig> transform::ParenExprConfig::parse(rapi
 	return BaseConfig::parse<transform::ParenExprConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult>
-transform::transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext, clang::ParenExpr& pexpr) {
+ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext,
+                                                  clang::ParenExpr& pexpr) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -22,15 +22,13 @@ transform::transformParenExpr(ParenExprConfig const& config, clang::ASTContext& 
 	auto stripped = pexpr.IgnoreParens();
 
 	if(checks::isSimpleValue(*stripped)) {
-		return TransformationResult{
+		return {
 		  fmt::format(" {} ", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stripped->getSourceRange()),
-		                                                  astContext.getSourceManager(), astContext.getLangOpts())),
-		  {}};
+		                                                  astContext.getSourceManager(), astContext.getLangOpts()))};
 	} else if(stripped != pexpr.getSubExpr()) {
-		return TransformationResult{
+		return {
 		  fmt::format("({})", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stripped->getSourceRange()),
-		                                                  astContext.getSourceManager(), astContext.getLangOpts())),
-		  {}};
+		                                                  astContext.getSourceManager(), astContext.getLangOpts()))};
 	} else {
 		return {};
 	}

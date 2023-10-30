@@ -15,6 +15,6 @@ namespace transform {
 		static std::optional<LAndOperatorConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult>
-	transformLAndOperator(LAndOperatorConfig const& config, clang::ASTContext& astContext, clang::BinaryOperator& binop);
+	ExprTransformResult transformLAndOperator(LAndOperatorConfig const& config, clang::ASTContext& astContext,
+	                                          clang::BinaryOperator& binop);
 } // namespace transform

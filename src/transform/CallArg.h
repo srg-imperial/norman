@@ -15,6 +15,5 @@ namespace transform {
 		static std::optional<CallArgConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformCallArg(CallArgConfig const& config, clang::ASTContext& astContext,
-	                                                     clang::Expr& arg);
+	ExprTransformResult transformCallArg(CallArgConfig const& config, clang::ASTContext& astContext, clang::Expr& arg);
 } // namespace transform

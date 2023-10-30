@@ -84,12 +84,14 @@ public:
 
 		for(unsigned i = 0, num_args = cexpr->getNumArgs(); i < num_args; i++) {
 			Expr* arg = cexpr->getArg(i);
-			if(auto output_pair = transform::transformCallArg(scopedConfig->configCallArg, *astContext, *arg)) {
-				if(!output_pair->to_hoist.empty()) {
-					to_hoist.emplace_back(std::move(output_pair->to_hoist));
+
+			auto transformResult = transform::transformCallArg(scopedConfig->configCallArg, *astContext, *arg);
+			if(transformResult.do_rewrite) {
+				if(!transformResult.to_hoist.empty()) {
+					to_hoist.emplace_back(std::move(transformResult.to_hoist));
 				}
 				rewriter.RemoveText(arg->getSourceRange(), onlyRemoveOld);
-				rewriter.InsertTextAfter(arg->getSourceRange().getBegin(), output_pair->expression);
+				rewriter.InsertTextAfter(arg->getSourceRange().getBegin(), transformResult.expression);
 
 				logln("Transformation applied at: ", DisplaySourceLoc(astContext, arg->getBeginLoc()));
 			} else {
@@ -122,33 +124,35 @@ public:
 	bool Traverse##kind(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output_pair = transform::transform##kind(scopedConfig->config##kind, *astContext, *node)) {                \
-			if(!output_pair->to_hoist.empty()) {                                                                             \
-				to_hoist.emplace_back(std::move(output_pair->to_hoist));                                                       \
+		auto transformResult = transform::transform##kind(scopedConfig->config##kind, *astContext, *node);                 \
+		if(transformResult.do_rewrite) {                                                                                   \
+			if(!transformResult.to_hoist.empty()) {                                                                          \
+				to_hoist.emplace_back(std::move(transformResult.to_hoist));                                                    \
 			}                                                                                                                \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
-			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), output_pair->expression);                            \
+			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.expression);                         \
                                                                                                                        \
 			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
 			return true;                                                                                                     \
-		} else {                                                                                                           \
-			return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                          \
 		}                                                                                                                  \
+                                                                                                                       \
+		return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                            \
 	}
 
 #define TraverseStmtFn(type)                                                                                           \
 	bool Traverse##type(type* node) {                                                                                    \
 		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
                                                                                                                        \
-		if(auto output = transform::transform##type(scopedConfig->config##type, *astContext, *node)) {                     \
+		auto transformResult = transform::transform##type(scopedConfig->config##type, *astContext, *node);                 \
+		if(transformResult.do_rewrite) {                                                                                   \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
-			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), *output);                                            \
+			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.statement);                          \
                                                                                                                        \
 			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
 			return true;                                                                                                     \
-		} else {                                                                                                           \
-			return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                          \
 		}                                                                                                                  \
+                                                                                                                       \
+		return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                            \
 	}
 
 	TraverseExprFn(CommaOperator, BinaryOperator);

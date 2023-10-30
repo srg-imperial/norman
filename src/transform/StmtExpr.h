@@ -15,6 +15,6 @@ namespace transform {
 		static std::optional<StmtExprConfig> parse(rapidjson::Value const&);
 	};
 
-	std::optional<TransformationResult> transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& astContext,
-	                                                      clang::StmtExpr& stmtExpr);
+	ExprTransformResult transformStmtExpr(StmtExprConfig const& config, clang::ASTContext& astContext,
+	                                      clang::StmtExpr& stmtExpr);
 } // namespace transform

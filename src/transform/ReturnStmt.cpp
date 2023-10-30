@@ -19,8 +19,8 @@ std::optional<transform::ReturnStmtConfig> transform::ReturnStmtConfig::parse(ra
 	return BaseConfig::parse<transform::ReturnStmtConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<std::string> transform::transformReturnStmt(ReturnStmtConfig const& config, clang::ASTContext& astContext,
-                                                          clang::ReturnStmt& returnStmt) {
+StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& config, clang::ASTContext& astContext,
+                                                   clang::ReturnStmt& returnStmt) {
 	if(!config.enabled) {
 		return {};
 	}

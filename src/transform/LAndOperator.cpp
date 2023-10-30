@@ -15,9 +15,8 @@ std::optional<transform::LAndOperatorConfig> transform::LAndOperatorConfig::pars
 	return BaseConfig::parse<transform::LAndOperatorConfig>(v, [](auto& config, auto const& member) { return false; });
 }
 
-std::optional<TransformationResult> transform::transformLAndOperator(LAndOperatorConfig const& config,
-                                                                     clang::ASTContext& astContext,
-                                                                     clang::BinaryOperator& binop) {
+ExprTransformResult transform::transformLAndOperator(LAndOperatorConfig const& config, clang::ASTContext& astContext,
+                                                     clang::BinaryOperator& binop) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -36,21 +35,21 @@ std::optional<TransformationResult> transform::transformLAndOperator(LAndOperato
 			if(lhs->HasSideEffects(astContext)) {
 				if(bool rhs_val; !rhs->HasSideEffects(astContext) && rhs->EvaluateAsBooleanCondition(rhs_val, astContext)) {
 					if(rhs_val) {
-						return TransformationResult{fmt::format("({})", lhs_str), {}};
+						return {fmt::format("({})", lhs_str)};
 					} else {
-						return TransformationResult{fmt::format("(0)"), fmt::format("{};", lhs_str)};
+						return {fmt::format("(0)"), fmt::format("{};", lhs_str)};
 					}
 				} else {
-					return TransformationResult{fmt::format("({})", rhs_str), fmt::format("{};", lhs_str)};
+					return {fmt::format("({})", rhs_str), fmt::format("{};", lhs_str)};
 				}
 			} else {
-				return TransformationResult{fmt::format("({})", rhs_str), {}};
+				return {fmt::format("({})", rhs_str)};
 			}
 		} else {
 			if(lhs->HasSideEffects(astContext)) {
-				return TransformationResult{fmt::format("({})", lhs_str), {}};
+				return {fmt::format("({})", lhs_str)};
 			} else {
-				return TransformationResult{fmt::format("(0)"), {}};
+				return {fmt::format("(0)")};
 			}
 		}
 	}
@@ -61,20 +60,20 @@ std::optional<TransformationResult> transform::transformLAndOperator(LAndOperato
 		if(rhs_val) {
 			if(rhs->HasSideEffects(astContext)) {
 				auto to_hoist = fmt::format("_Bool {} = ({});\n{};", var_name, lhs_str, rhs_str);
-				return TransformationResult{std::move(var_name), std::move(to_hoist)};
+				return {std::move(var_name), std::move(to_hoist)};
 			} else {
-				return TransformationResult{fmt::format("({})", lhs_str), {}};
+				return {fmt::format("({})", lhs_str)};
 			}
 		} else {
 			if(rhs->HasSideEffects(astContext)) {
-				return TransformationResult{fmt::format("(0)"), fmt::format("{};\n{};", lhs_str, rhs_str)};
+				return {fmt::format("(0)"), fmt::format("{};\n{};", lhs_str, rhs_str)};
 			} else {
-				return TransformationResult{fmt::format("(0)"), fmt::format("{};", lhs_str)};
+				return {fmt::format("(0)"), fmt::format("{};", lhs_str)};
 			}
 		}
 	}
 
 	auto to_hoist =
 	  fmt::format("_Bool {} = ({});\nif({}) {{\n{} = ({});\n}}", var_name, lhs_str, var_name, var_name, rhs_str);
-	return TransformationResult{std::move(var_name), std::move(to_hoist)};
+	return {std::move(var_name), std::move(to_hoist)};
 }
