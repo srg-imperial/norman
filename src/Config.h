@@ -30,11 +30,11 @@ public:
 		bool process = true;
 
 		transform::CallArgConfig configCallArg;
+		transform::CommaOperatorConfig configCommaOperator;
+		transform::ConditionalOperatorConfig configConditionalOperator;
 		transform::DoStmtConfig configDoStmt;
 		transform::ForStmtConfig configForStmt;
 		transform::IfStmtConfig configIfStmt;
-		transform::CommaOperatorConfig configCommaOperator;
-		transform::ConditionalOperatorConfig configConditionalOperator;
 		transform::LAndOperatorConfig configLAndOperator;
 		transform::LOrOperatorConfig configLOrOperator;
 		transform::ParenExprConfig configParenExpr;

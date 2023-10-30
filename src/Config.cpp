@@ -95,11 +95,11 @@ namespace {
 			}
 		}
 		CONFIG_CASE(CallArg)
+		CONFIG_CASE(CommaOperator)
+		CONFIG_CASE(ConditionalOperator)
 		CONFIG_CASE(DoStmt)
 		CONFIG_CASE(ForStmt)
 		CONFIG_CASE(IfStmt)
-		CONFIG_CASE(CommaOperator)
-		CONFIG_CASE(ConditionalOperator)
 		CONFIG_CASE(LAndOperator)
 		CONFIG_CASE(LOrOperator)
 		CONFIG_CASE(ParenExpr)
