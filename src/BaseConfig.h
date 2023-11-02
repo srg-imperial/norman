@@ -11,6 +11,7 @@ struct BaseConfig {
 	BaseConfig(bool enabledByDefault = true)
 	  : enabled(enabledByDefault) { }
 
+protected:
 	template <typename DerivedConfig, typename F>
 	static std::optional<DerivedConfig> parse(rapidjson::Value const& v, F member_callback) {
 		static_assert(std::is_base_of_v<BaseConfig, DerivedConfig>);
@@ -25,6 +26,8 @@ struct BaseConfig {
 					return {};
 				}
 			}
+		} else {
+			return {};
 		}
 
 		return {std::move(result)};
