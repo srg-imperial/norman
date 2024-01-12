@@ -196,6 +196,15 @@ public:
 		}
 		return true;
 	}
+
+	bool TraverseTypeLoc(TypeLoc typeLoc) {
+		// Let's not traverse into types.
+		//
+		// Known issues with traversing into types:
+		// - `typeof(X)` expressions are parsed as (typeof (paren (X))), which means we end up potentially stripping an
+		// "unnecessary" paren expr, resulting in `typeof X`, which does not compile
+		return true;
+	}
 };
 
 class NormaliseExprASTConsumer final : public ASTConsumer {
