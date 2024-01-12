@@ -14,7 +14,8 @@
 #include <string>
 
 std::optional<transform::CallArgConfig> transform::CallArgConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::CallArgConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::CallArgConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformCallArg(CallArgConfig const& config, clang::ASTContext& astContext,

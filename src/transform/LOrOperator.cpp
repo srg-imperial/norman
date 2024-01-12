@@ -10,7 +10,8 @@
 #include <clang/Lex/Lexer.h>
 
 std::optional<transform::LOrOperatorConfig> transform::LOrOperatorConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::LOrOperatorConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::LOrOperatorConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& config, clang::ASTContext& astContext,

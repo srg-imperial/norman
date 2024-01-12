@@ -12,7 +12,8 @@
 #include <string>
 
 std::optional<transform::LAndOperatorConfig> transform::LAndOperatorConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::LAndOperatorConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::LAndOperatorConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformLAndOperator(LAndOperatorConfig const& config, clang::ASTContext& astContext,

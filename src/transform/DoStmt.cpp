@@ -17,7 +17,8 @@
 #include <string>
 
 std::optional<transform::DoStmtConfig> transform::DoStmtConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::DoStmtConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::DoStmtConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 namespace {

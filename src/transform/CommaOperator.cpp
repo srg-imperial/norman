@@ -8,7 +8,8 @@
 #include <clang/Lex/Lexer.h>
 
 std::optional<transform::CommaOperatorConfig> transform::CommaOperatorConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::CommaOperatorConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::CommaOperatorConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const& config, clang::ASTContext& astContext,

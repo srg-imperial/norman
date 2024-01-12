@@ -19,7 +19,7 @@
 std::optional<transform::ConditionalOperatorConfig>
 transform::ConditionalOperatorConfig::parse(rapidjson::Value const& v) {
 	return BaseConfig::parse<transform::ConditionalOperatorConfig>(
-	  v, [](auto& config, auto const& member) { return false; });
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorConfig const& config,

@@ -16,7 +16,8 @@
 #include <string>
 
 std::optional<transform::ReturnStmtConfig> transform::ReturnStmtConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::ReturnStmtConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::ReturnStmtConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& config, clang::ASTContext& astContext,

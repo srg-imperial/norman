@@ -197,7 +197,7 @@ public:
 		return true;
 	}
 
-	bool TraverseTypeLoc(TypeLoc typeLoc) {
+	bool TraverseTypeLoc([[maybe_unused]] TypeLoc typeLoc) {
 		// Let's not traverse into types.
 		//
 		// Known issues with traversing into types:

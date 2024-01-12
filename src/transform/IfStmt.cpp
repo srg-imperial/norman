@@ -16,7 +16,8 @@
 #include <string>
 
 std::optional<transform::IfStmtConfig> transform::IfStmtConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::IfStmtConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::IfStmtConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 namespace {

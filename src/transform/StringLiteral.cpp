@@ -8,7 +8,8 @@
 #include <clang/Lex/Lexer.h>
 
 std::optional<transform::StringLiteralConfig> transform::StringLiteralConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::StringLiteralConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::StringLiteralConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformStringLiteral(StringLiteralConfig const& config, clang::ASTContext& astContext,

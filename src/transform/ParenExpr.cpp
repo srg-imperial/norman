@@ -10,7 +10,8 @@
 #include <clang/Lex/Lexer.h>
 
 std::optional<transform::ParenExprConfig> transform::ParenExprConfig::parse(rapidjson::Value const& v) {
-	return BaseConfig::parse<transform::ParenExprConfig>(v, [](auto& config, auto const& member) { return false; });
+	return BaseConfig::parse<transform::ParenExprConfig>(
+	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
 ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext,
