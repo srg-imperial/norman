@@ -1,4 +1,5 @@
 #include "Config.h"
+#include "check/NullStmt.h"
 #include "transform/CallArg.h"
 #include "transform/CommaOperator.h"
 #include "transform/ConditionalOperator.h"
@@ -104,13 +105,6 @@ public:
 		return true;
 	}
 
-	bool TraverseNullStmt(NullStmt* nullstmt) {
-		rewriter.RemoveText(nullstmt->getSourceRange(), onlyRemoveOld);
-		logln("Transformation applied at: ", DisplaySourceLoc(astContext, nullstmt->getBeginLoc()));
-
-		return true;
-	}
-
 	bool TraverseBinaryOperator(BinaryOperator* binop) {
 		switch(binop->getOpcode()) {
 			case clang::BinaryOperator::Opcode::BO_Comma: return TraverseCommaOperator(binop);
@@ -175,13 +169,24 @@ public:
 		for(auto* stmt : cstmt->body()) {
 			assert(to_hoist.empty());
 
+			// In general, we cannot remove labeled or attributed statements.
+			// E.g., `switch(x) { default:; }` would become `switch(x) { default: }`, which causes a syntax error
+			if(checks::null_stmt(stmt)) {
+				rewriter.RemoveText(stmt->getSourceRange(), onlyRemoveOld);
+				logln("Null stmt removed at: ", DisplaySourceLoc(astContext, stmt->getBeginLoc()));
+				continue;
+			}
+
+			// All other transforms shall not completely remove a statement (they can still convert it to a null statement),
+			// which enables us to ignore any labels here.
 			while(auto labelStmt = dyn_cast<LabelStmt>(stmt)) {
 				stmt = labelStmt->getSubStmt();
 			}
+
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {
 				rewriter.RemoveText(parenExpr->getLParen(), onlyRemoveOld);
 				rewriter.RemoveText(parenExpr->getRParen(), onlyRemoveOld);
-				logln("Transformation applied at: ", DisplaySourceLoc(astContext, parenExpr->getBeginLoc()));
+				logln("Parenthesis removed at: ", DisplaySourceLoc(astContext, parenExpr->getBeginLoc()));
 
 				stmt = parenExpr->getSubExpr();
 			}

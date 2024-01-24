@@ -40,8 +40,7 @@ ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorC
 	  clang::CharSourceRange::getTokenRange(cop.getFalseExpr()->IgnoreParens()->getSourceRange()),
 	  astContext.getSourceManager(), astContext.getLangOpts());
 
-	bool cond_val;
-	if(cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
+	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
 		if(cond->HasSideEffects(astContext)) {
 			return {fmt::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr)};
 		} else {

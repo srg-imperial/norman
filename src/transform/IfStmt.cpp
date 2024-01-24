@@ -1,5 +1,6 @@
 #include "IfStmt.h"
 
+#include "../check/NullStmt.h"
 #include "../check/SimpleValue.h"
 #include "../util/UId.h"
 
@@ -35,7 +36,7 @@ namespace {
 
 	void append_else(std::string& result, transform::IfStmtConfig const& config, clang::ASTContext& astContext,
 	                 clang::Stmt* stmt) {
-		if(!stmt) {
+		if(checks::null_stmt(stmt)) {
 			return;
 		}
 
@@ -69,8 +70,51 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang
 	clang::Stmt* then_stmt = ifStmt.getThen();
 	clang::Stmt* else_stmt = ifStmt.getElse();
 
+	bool then_stmt_is_null_stmt = checks::null_stmt(then_stmt);
+	bool else_stmt_is_null_stmt = checks::null_stmt(else_stmt);
+
+	// If the condition is a constant, we can deconstruct the if statement.
+	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
+		std::string result;
+		if(cond->HasSideEffects(astContext)) {
+			result =
+			  fmt::format("{};", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
+			                                                 astContext.getSourceManager(), astContext.getLangOpts()));
+		}
+		if(cond_val) {
+			if(!then_stmt_is_null_stmt) {
+				append_as_compound(result, astContext, *then_stmt);
+			}
+		} else {
+			if(!else_stmt_is_null_stmt) {
+				append_as_compound(result, astContext, *else_stmt);
+			}
+		}
+		return {std::move(result)};
+	}
+
+	// We never want to keep a null statement as the then condition
+	if(then_stmt_is_null_stmt) {
+		if(else_stmt_is_null_stmt) {
+			return {
+			  fmt::format("{};", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
+			                                                 astContext.getSourceManager(), astContext.getLangOpts()))};
+		} else {
+			auto result = fmt::format(
+			  "if(!({}))", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
+			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			append_as_compound(result, astContext, *else_stmt);
+			return {std::move(result)};
+		}
+	}
+
+	// Skip transformation if:
+	// 1. The condition is simple enough that it need not be rewritten
+	// 2. The then statement is a compound statement
+	// 3. The else statement is a compound statement if it exists
+	// 4. The else statement exists iff it is not a null stmt
 	if(checks::isSimpleValue(*cond) && llvm::isa<clang::CompoundStmt>(then_stmt) &&
-	   (!else_stmt || llvm::isa<clang::CompoundStmt>(else_stmt))) {
+	   (!else_stmt || llvm::isa<clang::CompoundStmt>(else_stmt)) && !else_stmt == else_stmt_is_null_stmt) {
 		return {};
 	}
 
