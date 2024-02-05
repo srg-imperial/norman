@@ -1,7 +1,5 @@
 #include "ConditionalOperator.h"
 
-#include "../util/UId.h"
-
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
@@ -22,8 +20,7 @@ transform::ConditionalOperatorConfig::parse(rapidjson::Value const& v) {
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorConfig const& config,
-                                                            clang::ASTContext& astContext,
+ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorConfig const& config, Context& ctx,
                                                             clang::ConditionalOperator& cop) {
 	if(!config.enabled) {
 		return {};
@@ -31,32 +28,27 @@ ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorC
 
 	auto const* cond = cop.getCond()->IgnoreParens();
 
-	auto cexpr = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-	                                         astContext.getSourceManager(), astContext.getLangOpts());
-	auto texpr = clang::Lexer::getSourceText(
-	  clang::CharSourceRange::getTokenRange(cop.getTrueExpr()->IgnoreParens()->getSourceRange()),
-	  astContext.getSourceManager(), astContext.getLangOpts());
-	auto fexpr = clang::Lexer::getSourceText(
-	  clang::CharSourceRange::getTokenRange(cop.getFalseExpr()->IgnoreParens()->getSourceRange()),
-	  astContext.getSourceManager(), astContext.getLangOpts());
+	auto cexpr = ctx.source_text(cond->getSourceRange());
+	auto texpr = ctx.source_text(cop.getTrueExpr()->IgnoreParens()->getSourceRange());
+	auto fexpr = ctx.source_text(cop.getFalseExpr()->IgnoreParens()->getSourceRange());
 
-	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
-		if(cond->HasSideEffects(astContext)) {
+	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
+		if(cond->HasSideEffects(*ctx.astContext)) {
 			return {fmt::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr)};
 		} else {
 			return {fmt::format("({})", cond_val ? texpr : fexpr)};
 		}
 	}
 
-	std::string var_name = util::uid(astContext, "_CExpr");
+	std::string var_name = ctx.uid("_CExpr");
 
 	auto const expr_type = cop.getType();
 	if(expr_type->isVoidType()) {
 		return {"((void)0)", fmt::format("if({}) {{\n{};\n}} else {{\n{};\n}}\n", cexpr, texpr, fexpr)};
 	} else {
 		clang::VarDecl* vd = clang::VarDecl::Create(
-		  astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
-		  &astContext.Idents.get(var_name), expr_type, nullptr, clang::StorageClass::SC_None);
+		  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
+		  &ctx.astContext->Idents.get(var_name), expr_type, nullptr, clang::StorageClass::SC_None);
 
 		std::string to_hoist = fmt::format("{};\nif({}) {{\n{} = ({});\n}} else {{\n{} = ({});\n}}\n", *vd, cexpr, var_name,
 		                                   texpr, var_name, fexpr);

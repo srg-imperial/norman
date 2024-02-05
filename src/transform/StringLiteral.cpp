@@ -12,7 +12,7 @@ std::optional<transform::StringLiteralConfig> transform::StringLiteralConfig::pa
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformStringLiteral(StringLiteralConfig const& config, clang::ASTContext& astContext,
+ExprTransformResult transform::transformStringLiteral(StringLiteralConfig const& config, Context& ctx,
                                                       clang::StringLiteral& strLit) {
 	if(!config.enabled) {
 		return {};
@@ -22,7 +22,7 @@ ExprTransformResult transform::transformStringLiteral(StringLiteralConfig const&
 		std::string result;
 		{
 			llvm::raw_string_ostream out{result};
-			strLit.printPretty(out, nullptr, astContext.getPrintingPolicy());
+			strLit.printPretty(out, nullptr, ctx.astContext->getPrintingPolicy());
 		}
 		return {std::move(result), {}};
 	} else {

@@ -28,8 +28,8 @@ std::optional<transform::VarDeclConfig> transform::VarDeclConfig::parse(rapidjso
 }
 
 namespace {
-	std::string split(transform::VarDeclConfig const& config, clang::ASTContext& astContext, clang::VarDecl& varDecl) {
-		clang::QualType type = varDecl.getType().getDesugaredType(astContext);
+	std::string split(transform::VarDeclConfig const& config, Context& ctx, clang::VarDecl& varDecl) {
+		clang::QualType type = varDecl.getType().getDesugaredType(*ctx.astContext);
 		if(type.isLocalConstQualified()) {
 			if(config.removeLocalConst) {
 				type.removeLocalConst();
@@ -37,19 +37,15 @@ namespace {
 				throw "Split of const variable declaration required";
 			}
 		}
-		clang::VarDecl* vd =
-		  clang::VarDecl::Create(astContext, varDecl.getDeclContext(), clang::SourceLocation(), clang::SourceLocation(),
-		                         varDecl.getIdentifier(), type, nullptr, varDecl.getStorageClass());
+		clang::VarDecl* vd = clang::VarDecl::Create(*ctx.astContext, varDecl.getDeclContext(), clang::SourceLocation(),
+		                                            clang::SourceLocation(), varDecl.getIdentifier(), type, nullptr,
+		                                            varDecl.getStorageClass());
 
-		return fmt::format(
-		  "{};\n{} = ({});", *vd, varDecl.getName(),
-		  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(varDecl.getInit()->getSourceRange()),
-		                              astContext.getSourceManager(), astContext.getLangOpts()));
+		return fmt::format("{};\n{} = ({});", *vd, varDecl.getName(), ctx.source_text(varDecl.getInit()->getSourceRange()));
 	}
 } // namespace
 
-StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, clang::ASTContext& astContext,
-                                                clang::VarDecl& varDecl) {
+StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, Context& ctx, clang::VarDecl& varDecl) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -64,7 +60,7 @@ StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, cla
 				} else {
 					// SLIGHT SEMANTIC CHANGE if the variable is `const`
 					// TODO: only transform if there is a reason to
-					return {split(config, astContext, varDecl)};
+					return {split(config, ctx, varDecl)};
 				}
 			}
 		}

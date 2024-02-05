@@ -14,8 +14,7 @@ std::optional<transform::ParenExprConfig> transform::ParenExprConfig::parse(rapi
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, clang::ASTContext& astContext,
-                                                  clang::ParenExpr& pexpr) {
+ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, Context& ctx, clang::ParenExpr& pexpr) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -23,13 +22,9 @@ ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config,
 	auto stripped = pexpr.IgnoreParens();
 
 	if(checks::isSimpleValue(*stripped)) {
-		return {
-		  fmt::format(" {} ", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stripped->getSourceRange()),
-		                                                  astContext.getSourceManager(), astContext.getLangOpts()))};
+		return {fmt::format(" {} ", ctx.source_text(stripped->getSourceRange()))};
 	} else if(stripped != pexpr.getSubExpr()) {
-		return {
-		  fmt::format("({})", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stripped->getSourceRange()),
-		                                                  astContext.getSourceManager(), astContext.getLangOpts()))};
+		return {fmt::format("({})", ctx.source_text(stripped->getSourceRange()))};
 	} else {
 		return {};
 	}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BaseConfig.h"
+#include "../Context.h"
 #include "../Norman.h"
 
 #include <rapidjson/document.h>
@@ -15,6 +16,6 @@ namespace transform {
 		static std::optional<StringLiteralConfig> parse(rapidjson::Value const&);
 	};
 
-	ExprTransformResult transformStringLiteral(StringLiteralConfig const& config, clang::ASTContext& astContext,
+	ExprTransformResult transformStringLiteral(StringLiteralConfig const& config, Context& ctx,
 	                                           clang::StringLiteral& strLit);
 } // namespace transform

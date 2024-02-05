@@ -1,7 +1,5 @@
 #include "LOrOperator.h"
 
-#include "../util/UId.h"
-
 #include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
@@ -14,7 +12,7 @@ std::optional<transform::LOrOperatorConfig> transform::LOrOperatorConfig::parse(
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& config, clang::ASTContext& astContext,
+ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& config, Context& ctx,
                                                     clang::BinaryOperator& binop) {
 	if(!config.enabled) {
 		return {};
@@ -23,22 +21,20 @@ ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& con
 	auto lhs = binop.getLHS()->IgnoreParens();
 	auto rhs = binop.getRHS()->IgnoreParens();
 
-	auto lhs_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(lhs->getSourceRange()),
-	                                           astContext.getSourceManager(), astContext.getLangOpts());
+	auto lhs_str = ctx.source_text(lhs->getSourceRange());
+	auto rhs_str = ctx.source_text(rhs->getSourceRange());
 
-	auto rhs_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(rhs->getSourceRange()),
-	                                           astContext.getSourceManager(), astContext.getLangOpts());
-
-	if(bool lhs_val; lhs->EvaluateAsBooleanCondition(lhs_val, astContext)) {
+	if(bool lhs_val; lhs->EvaluateAsBooleanCondition(lhs_val, *ctx.astContext)) {
 		if(lhs_val) {
-			if(lhs->HasSideEffects(astContext)) {
+			if(lhs->HasSideEffects(*ctx.astContext)) {
 				return {fmt::format("({})", lhs_str)};
 			} else {
 				return {fmt::format("(1)")};
 			}
 		} else {
-			if(lhs->HasSideEffects(astContext)) {
-				if(bool rhs_val; !rhs->HasSideEffects(astContext) && rhs->EvaluateAsBooleanCondition(rhs_val, astContext)) {
+			if(lhs->HasSideEffects(*ctx.astContext)) {
+				if(bool rhs_val;
+				   !rhs->HasSideEffects(*ctx.astContext) && rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 					if(rhs_val) {
 						return {fmt::format("(1)"), fmt::format("{};", lhs_str)};
 					} else {
@@ -53,17 +49,17 @@ ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& con
 		}
 	}
 
-	std::string var_name = util::uid(astContext, "_LOr");
+	std::string var_name = ctx.uid("_LOr");
 
-	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, astContext)) {
+	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 		if(rhs_val) {
-			if(rhs->HasSideEffects(astContext)) {
+			if(rhs->HasSideEffects(*ctx.astContext)) {
 				return {fmt::format("(1)"), fmt::format("{};\n{};", lhs_str, rhs_str)};
 			} else {
 				return {fmt::format("(1)"), fmt::format("{};", lhs_str)};
 			}
 		} else {
-			if(rhs->HasSideEffects(astContext)) {
+			if(rhs->HasSideEffects(*ctx.astContext)) {
 				auto to_hoist = fmt::format("_Bool {} = ({});\n{};", var_name, lhs_str, rhs_str);
 				return {std::move(var_name), std::move(to_hoist)};
 			} else {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BaseConfig.h"
+#include "../Context.h"
 #include "../Norman.h"
 
 #include <rapidjson/document.h>
@@ -15,6 +16,5 @@ namespace transform {
 		static std::optional<LOrOperatorConfig> parse(rapidjson::Value const&);
 	};
 
-	ExprTransformResult transformLOrOperator(LOrOperatorConfig const& config, clang::ASTContext& astContext,
-	                                         clang::BinaryOperator& binop);
+	ExprTransformResult transformLOrOperator(LOrOperatorConfig const& config, Context& ctx, clang::BinaryOperator& binop);
 } // namespace transform

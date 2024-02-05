@@ -1,7 +1,6 @@
 #include "ForStmt.h"
 
 #include "../check/NakedContinue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
@@ -21,7 +20,7 @@ std::optional<transform::ForStmtConfig> transform::ForStmtConfig::parse(rapidjso
 
 namespace {
 	template <typename Out> class ForTransformer {
-		clang::ASTContext* astContext;
+		Context& ctx;
 
 		clang::Stmt* init;
 		clang::Expr* cond;
@@ -31,8 +30,8 @@ namespace {
 		Out out;
 
 	public:
-		ForTransformer(clang::ASTContext& astContext, clang::ForStmt& forStmt, Out out)
-		  : astContext{&astContext}
+		ForTransformer(Context& ctx, clang::ForStmt& forStmt, Out out)
+		  : ctx{ctx}
 		  , init{forStmt.getInit()}
 		  , cond{forStmt.getCond()}
 		  , inc{forStmt.getInc()}
@@ -41,9 +40,7 @@ namespace {
 
 		void transform() {
 			if(init) {
-				out = fmt::format_to(out, "{{\n{};\n",
-				                     clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(init->getSourceRange()),
-				                                                 astContext->getSourceManager(), astContext->getLangOpts()));
+				out = fmt::format_to(out, "{{\n{};\n", ctx.source_text(init->getSourceRange()));
 				transform_2();
 				out = fmt::format_to(out, "}}");
 			} else {
@@ -54,11 +51,9 @@ namespace {
 	private:
 		void transform_2() {
 			if(inc) {
-				auto inc_str =
-				  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(inc->IgnoreParens()->getSourceRange()),
-				                              astContext->getSourceManager(), astContext->getLangOpts());
+				auto inc_str = ctx.source_text(inc->IgnoreParens()->getSourceRange());
 				if(checks::naked_continue(*body)) {
-					std::string var_name = util::uid(*astContext, "_ForStmt");
+					std::string var_name = ctx.uid("_ForStmt");
 					out = fmt::format_to(out, "_Bool {} = 0;", var_name);
 					transform_cond();
 					out = fmt::format_to(out, "{{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, inc_str, var_name);
@@ -78,10 +73,7 @@ namespace {
 
 		void transform_cond() {
 			if(cond) {
-				out = fmt::format_to(
-				  out, "while({})",
-				  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->IgnoreParens()->getSourceRange()),
-				                              astContext->getSourceManager(), astContext->getLangOpts()));
+				out = fmt::format_to(out, "while({})", ctx.source_text(cond->IgnoreParens()->getSourceRange()));
 			} else {
 				out = fmt::format_to(out, "while(1)");
 			}
@@ -89,27 +81,22 @@ namespace {
 
 		void transform_body() {
 			if(llvm::isa<clang::CompoundStmt>(body)) {
-				out = fmt::format_to(out, "{}",
-				                     clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(body->getSourceRange()),
-				                                                 astContext->getSourceManager(), astContext->getLangOpts()));
+				out = fmt::format_to(out, "{}", ctx.source_text(body->getSourceRange()));
 			} else {
-				out = fmt::format_to(out, "{{\n{}\n}}\n",
-				                     clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(body->getSourceRange()),
-				                                                 astContext->getSourceManager(), astContext->getLangOpts()));
+				out = fmt::format_to(out, "{{\n{}\n}}\n", ctx.source_text(body->getSourceRange()));
 			}
 		}
 	};
 } // namespace
 
-StmtTransformResult transform::transformForStmt(ForStmtConfig const& config, clang::ASTContext& astContext,
-                                                clang::ForStmt& forStmt) {
+StmtTransformResult transform::transformForStmt(ForStmtConfig const& config, Context& ctx, clang::ForStmt& forStmt) {
 	if(!config.enabled) {
 		return {};
 	}
 
 	std::string result;
 
-	ForTransformer{astContext, forStmt, std::back_inserter(result)}.transform();
+	ForTransformer{ctx, forStmt, std::back_inserter(result)}.transform();
 
 	return {std::move(result)};
 }

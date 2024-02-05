@@ -12,7 +12,7 @@ std::optional<transform::CommaOperatorConfig> transform::CommaOperatorConfig::pa
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const& config, clang::ASTContext& astContext,
+ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const& config, Context& ctx,
                                                       clang::BinaryOperator& binop) {
 	if(!config.enabled) {
 		return {};
@@ -21,14 +21,10 @@ ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const&
 	clang::Expr* lhs = binop.getLHS();
 	clang::Expr* rhs = binop.getRHS();
 
-	auto lhs_str =
-	  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(lhs->IgnoreParens()->getSourceRange()),
-	                              astContext.getSourceManager(), astContext.getLangOpts());
-	auto rhs_str =
-	  clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(rhs->IgnoreParens()->getSourceRange()),
-	                              astContext.getSourceManager(), astContext.getLangOpts());
+	auto lhs_str = ctx.source_text(lhs->IgnoreParens()->getSourceRange());
+	auto rhs_str = ctx.source_text(rhs->IgnoreParens()->getSourceRange());
 
-	if(!lhs->HasSideEffects(astContext)) {
+	if(!lhs->HasSideEffects(*ctx.astContext)) {
 		return {fmt::format("({})", rhs_str)};
 	}
 

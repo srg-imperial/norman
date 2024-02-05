@@ -1,7 +1,6 @@
 #include "ReturnStmt.h"
 
 #include "../check/SimpleValue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
@@ -20,7 +19,7 @@ std::optional<transform::ReturnStmtConfig> transform::ReturnStmtConfig::parse(ra
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& config, clang::ASTContext& astContext,
+StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& config, Context& ctx,
                                                    clang::ReturnStmt& returnStmt) {
 	if(!config.enabled) {
 		return {};
@@ -38,18 +37,13 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 
 	retVal = retVal->IgnoreParens();
 	if(checks::isSimpleValue(*retVal)) {
-		return {fmt::format("return {}",
-		                    clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(retVal->getSourceRange()),
-		                                                astContext.getSourceManager(), astContext.getLangOpts()))};
+		return {fmt::format("return {}", ctx.source_text(retVal->getSourceRange()))};
 	}
 
-	std::string var_name = util::uid(astContext, "_Return");
+	std::string var_name = ctx.uid("_Return");
 	clang::VarDecl* vd = clang::VarDecl::Create(
-	  astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
-	  &astContext.Idents.get(var_name), returnStmt.getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);
+	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
+	  &ctx.astContext->Idents.get(var_name), returnStmt.getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);
 
-	return {fmt::format("{} = ({});\nreturn {}", *vd,
-	                    clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(retVal->getSourceRange()),
-	                                                astContext.getSourceManager(), astContext.getLangOpts()),
-	                    var_name)};
+	return {fmt::format("{} = ({});\nreturn {}", *vd, ctx.source_text(retVal->getSourceRange()), var_name)};
 }

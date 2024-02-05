@@ -2,7 +2,6 @@
 
 #include "../check/NakedContinue.h"
 #include "../check/SimpleValue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
@@ -22,20 +21,16 @@ std::optional<transform::WhileStmtConfig> transform::WhileStmtConfig::parse(rapi
 }
 
 namespace {
-	void append_as_compound(std::string& result, clang::ASTContext& astContext, clang::Stmt& stmt) {
+	void append_as_compound(std::string& result, Context& ctx, clang::Stmt& stmt) {
 		if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
 		}
 	}
 } // namespace
 
-StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config, clang::ASTContext& astContext,
+StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config, Context& ctx,
                                                   clang::WhileStmt& whileStmt) {
 	if(!config.enabled) {
 		return {};
@@ -50,26 +45,22 @@ StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config,
 
 	cond = cond->IgnoreParens();
 	if(checks::isSimpleValue(*cond)) {
-		auto result = fmt::format("while({})",
-		                          clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                                      astContext.getSourceManager(), astContext.getLangOpts()));
-		append_as_compound(result, astContext, *body);
+		auto result = fmt::format("while({})", ctx.source_text(cond->getSourceRange()));
+		append_as_compound(result, ctx, *body);
 		return {std::move(result)};
 	} else if(!checks::naked_continue(*body)) {
-		std::string var_name = util::uid(astContext, "_WhileCond");
-		auto cond_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                            astContext.getSourceManager(), astContext.getLangOpts());
+		std::string var_name = ctx.uid("_WhileCond");
+		auto cond_str = ctx.source_text(cond->getSourceRange());
 
 		auto result = fmt::format("_Bool {} = ({});\nwhile({}) {{\n", var_name, cond_str, var_name);
-		append_as_compound(result, astContext, *body);
+		append_as_compound(result, ctx, *body);
 		fmt::format_to(std::back_inserter(result), "{} = ({});\n}}", var_name, cond_str);
 		return {std::move(result)};
 	} else {
-		auto cond_str = clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                            astContext.getSourceManager(), astContext.getLangOpts());
+		auto cond_str = ctx.source_text(cond->getSourceRange());
 
 		auto result = fmt::format("while(1) {{\nif(!({})) {{\nbreak;\n}}\n", cond_str);
-		append_as_compound(result, astContext, *body);
+		append_as_compound(result, ctx, *body);
 		fmt::format_to(std::back_inserter(result), "\n}}");
 		return {std::move(result)};
 	}

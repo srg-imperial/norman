@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BaseConfig.h"
+#include "../Context.h"
 #include "../Norman.h"
 
 #include <rapidjson/document.h>
@@ -15,6 +16,5 @@ namespace transform {
 		static std::optional<ForStmtConfig> parse(rapidjson::Value const&);
 	};
 
-	StmtTransformResult transformForStmt(ForStmtConfig const& config, clang::ASTContext& astContext,
-	                                     clang::ForStmt& forStmt);
+	StmtTransformResult transformForStmt(ForStmtConfig const& config, Context& ctx, clang::ForStmt& forStmt);
 } // namespace transform

@@ -2,7 +2,6 @@
 
 #include "../check/NullStmt.h"
 #include "../check/SimpleValue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
@@ -22,46 +21,36 @@ std::optional<transform::IfStmtConfig> transform::IfStmtConfig::parse(rapidjson:
 }
 
 namespace {
-	void append_as_compound(std::string& result, clang::ASTContext& astContext, clang::Stmt& stmt) {
+	void append_as_compound(std::string& result, Context& ctx, clang::Stmt& stmt) {
 		if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
 		}
 	}
 
-	void append_else(std::string& result, transform::IfStmtConfig const& config, clang::ASTContext& astContext,
-	                 clang::Stmt* stmt) {
+	void append_else(std::string& result, transform::IfStmtConfig const& config, Context& ctx, clang::Stmt* stmt) {
 		if(checks::null_stmt(stmt)) {
 			return;
 		}
 
 		fmt::format_to(std::back_inserter(result), "else");
 		if(auto ifStmt = llvm::dyn_cast<clang::IfStmt>(stmt)) {
-			auto transformResult = transform::transformIfStmt(config, astContext, *ifStmt);
+			auto transformResult = transform::transformIfStmt(config, ctx, *ifStmt);
 			if(transformResult.do_rewrite) {
 				fmt::format_to(std::back_inserter(result), "{{\n{}\n}}", transformResult.statement);
 			} else {
-				append_as_compound(result, astContext, *stmt);
+				append_as_compound(result, ctx, *stmt);
 			}
 		} else if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt->getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt->getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt->getSourceRange()));
 		}
 	}
 } // namespace
 
-StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang::ASTContext& astContext,
-                                               clang::IfStmt& ifStmt) {
+StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Context& ctx, clang::IfStmt& ifStmt) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -74,20 +63,18 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang
 	bool else_stmt_is_null_stmt = checks::null_stmt(else_stmt);
 
 	// If the condition is a constant, we can deconstruct the if statement.
-	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
+	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 		std::string result;
-		if(cond->HasSideEffects(astContext)) {
-			result =
-			  fmt::format("{};", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-			                                                 astContext.getSourceManager(), astContext.getLangOpts()));
+		if(cond->HasSideEffects(*ctx.astContext)) {
+			result = fmt::format("{};", ctx.source_text(cond->getSourceRange()));
 		}
 		if(cond_val) {
 			if(!then_stmt_is_null_stmt) {
-				append_as_compound(result, astContext, *then_stmt);
+				append_as_compound(result, ctx, *then_stmt);
 			}
 		} else {
 			if(!else_stmt_is_null_stmt) {
-				append_as_compound(result, astContext, *else_stmt);
+				append_as_compound(result, ctx, *else_stmt);
 			}
 		}
 		return {std::move(result)};
@@ -96,14 +83,10 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang
 	// We never want to keep a null statement as the then condition
 	if(then_stmt_is_null_stmt) {
 		if(else_stmt_is_null_stmt) {
-			return {
-			  fmt::format("{};", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-			                                                 astContext.getSourceManager(), astContext.getLangOpts()))};
+			return {fmt::format("{};", ctx.source_text(cond->getSourceRange()))};
 		} else {
-			auto result = fmt::format(
-			  "if(!({}))", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
-			append_as_compound(result, astContext, *else_stmt);
+			auto result = fmt::format("if(!({}))", ctx.source_text(cond->getSourceRange()));
+			append_as_compound(result, ctx, *else_stmt);
 			return {std::move(result)};
 		}
 	}
@@ -120,24 +103,19 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, clang
 
 	cond = cond->IgnoreParens();
 	if(checks::isSimpleValue(*cond)) {
-		auto result =
-		  fmt::format("if({})", clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                                    astContext.getSourceManager(), astContext.getLangOpts()));
-		append_as_compound(result, astContext, *then_stmt);
-		append_else(result, config, astContext, else_stmt);
+		auto result = fmt::format("if({})", ctx.source_text(cond->getSourceRange()));
+		append_as_compound(result, ctx, *then_stmt);
+		append_else(result, config, ctx, else_stmt);
 		return {std::move(result)};
 	} else {
-		std::string var_name = util::uid(astContext, "_IfCond");
+		std::string var_name = ctx.uid("_IfCond");
 		clang::VarDecl* vd = clang::VarDecl::Create(
-		  astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
-		  &astContext.Idents.get(var_name), ifStmt.getCond()->getType(), nullptr, clang::StorageClass::SC_None);
+		  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
+		  &ctx.astContext->Idents.get(var_name), ifStmt.getCond()->getType(), nullptr, clang::StorageClass::SC_None);
 
-		auto result = fmt::format("{} = ({});\nif({})", *vd,
-		                          clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                                      astContext.getSourceManager(), astContext.getLangOpts()),
-		                          var_name);
-		append_as_compound(result, astContext, *then_stmt);
-		append_else(result, config, astContext, else_stmt);
+		auto result = fmt::format("{} = ({});\nif({})", *vd, ctx.source_text(cond->getSourceRange()), var_name);
+		append_as_compound(result, ctx, *then_stmt);
+		append_else(result, config, ctx, else_stmt);
 		return {std::move(result)};
 	}
 }

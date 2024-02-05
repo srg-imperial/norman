@@ -3,7 +3,6 @@
 #include "../check/Label.h"
 #include "../check/NakedBreak.h"
 #include "../check/NakedContinue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_llvm.h"
 #include <fmt/format.h>
@@ -22,21 +21,16 @@ std::optional<transform::DoStmtConfig> transform::DoStmtConfig::parse(rapidjson:
 }
 
 namespace {
-	void append_as_compound(std::string& result, clang::ASTContext& astContext, clang::Stmt& stmt) {
+	void append_as_compound(std::string& result, Context& ctx, clang::Stmt& stmt) {
 		if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}",
-			               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(stmt.getSourceRange()),
-			                                           astContext.getSourceManager(), astContext.getLangOpts()));
+			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
 		}
 	}
 } // namespace
 
-StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, clang::ASTContext& astContext,
-                                               clang::DoStmt& doStmt) {
+StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, Context& ctx, clang::DoStmt& doStmt) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -46,26 +40,22 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, clang
 
 	std::string result;
 
-	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, astContext)) {
+	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 		if(cond_val) {
 			fmt::format_to(std::back_inserter(result), "while(1)");
-			if(cond->HasSideEffects(astContext)) {
+			if(cond->HasSideEffects(*ctx.astContext)) {
 				fmt::format_to(std::back_inserter(result), " {{");
-				append_as_compound(result, astContext, body);
-				fmt::format_to(std::back_inserter(result), "{};}}",
-				               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-				                                           astContext.getSourceManager(), astContext.getLangOpts()));
+				append_as_compound(result, ctx, body);
+				fmt::format_to(std::back_inserter(result), "{};}}", ctx.source_text(cond->getSourceRange()));
 			} else {
-				append_as_compound(result, astContext, body);
+				append_as_compound(result, ctx, body);
 			}
 			return {std::move(result)};
 		} else {
 			if(!checks::naked_break(body) && !checks::naked_continue(body)) {
-				append_as_compound(result, astContext, body);
-				if(cond->HasSideEffects(astContext)) {
-					fmt::format_to(std::back_inserter(result), "{};",
-					               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-					                                           astContext.getSourceManager(), astContext.getLangOpts()));
+				append_as_compound(result, ctx, body);
+				if(cond->HasSideEffects(*ctx.astContext)) {
+					fmt::format_to(std::back_inserter(result), "{};", ctx.source_text(cond->getSourceRange()));
 				}
 				return {std::move(result)};
 			}
@@ -73,22 +63,18 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, clang
 	}
 
 	if(!checks::label(body)) {
-		append_as_compound(result, astContext, body);
-		fmt::format_to(std::back_inserter(result), "\nwhile({}) ",
-		               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-		                                           astContext.getSourceManager(), astContext.getLangOpts()));
-		append_as_compound(result, astContext, body);
+		append_as_compound(result, ctx, body);
+		fmt::format_to(std::back_inserter(result), "\nwhile({}) ", ctx.source_text(cond->getSourceRange()));
+		append_as_compound(result, ctx, body);
 		return {std::move(result)};
 	}
 
-	auto var_name = util::uid(astContext, "_DoStmt");
+	auto var_name = ctx.uid("_DoStmt");
 
 	fmt::format_to(std::back_inserter(result), "_Bool {} = 1;\nwhile({} || ({})) {{\n{} = 0;\n", var_name, var_name,
-	               clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(cond->getSourceRange()),
-	                                           astContext.getSourceManager(), astContext.getLangOpts()),
-	               var_name);
+	               ctx.source_text(cond->getSourceRange()), var_name);
 
-	append_as_compound(result, astContext, body);
+	append_as_compound(result, ctx, body);
 
 	fmt::format_to(std::back_inserter(result), "\n}}");
 

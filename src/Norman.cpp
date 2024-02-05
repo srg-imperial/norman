@@ -45,7 +45,7 @@
 using namespace clang;
 
 class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
-	ASTContext* astContext;
+	std::vector<Context> ctxs;
 	Config const& config;
 	Config::ScopedConfig const* scopedConfig{};
 	Rewriter& rewriter;
@@ -54,22 +54,25 @@ class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
 
 public:
 	explicit NormaliseExprVisitor(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
-	  : astContext(&(CI->getASTContext()))
-	  , config(config)
+	  : config(config)
 	  , scopedConfig(&config.fileScope())
 	  , rewriter(rewriter) {
 		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
 		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
+
+		ctxs.push_back(Context{&CI->getASTContext(), std::string{}});
 	}
 
 	bool TraverseFunctionDecl(FunctionDecl* fdecl) {
 		scopedConfig = &config.function(*fdecl);
 		if(!scopedConfig->process) {
-			logln("Skipping function ", fdecl->getName(), DisplaySourceLoc(astContext, fdecl->getBeginLoc()));
+			logln("Skipping function ", fdecl->getName(), DisplaySourceLoc(ctxs.back().astContext, fdecl->getBeginLoc()));
 			return true;
 		}
 
+		ctxs.push_back(Context{&fdecl->getASTContext(), fdecl->getName().str()});
 		bool result = RecursiveASTVisitor::TraverseFunctionDecl(fdecl);
+		ctxs.pop_back();
 
 		scopedConfig = &config.fileScope();
 
@@ -86,7 +89,7 @@ public:
 		for(unsigned i = 0, num_args = cexpr->getNumArgs(); i < num_args; i++) {
 			Expr* arg = cexpr->getArg(i);
 
-			auto transformResult = transform::transformCallArg(scopedConfig->configCallArg, *astContext, *arg);
+			auto transformResult = transform::transformCallArg(scopedConfig->configCallArg, ctxs.back(), *arg);
 			if(transformResult.do_rewrite) {
 				if(!transformResult.to_hoist.empty()) {
 					to_hoist.emplace_back(std::move(transformResult.to_hoist));
@@ -94,7 +97,7 @@ public:
 				rewriter.RemoveText(arg->getSourceRange(), onlyRemoveOld);
 				rewriter.InsertTextAfter(arg->getSourceRange().getBegin(), transformResult.expression);
 
-				logln("Transformation applied at: ", DisplaySourceLoc(astContext, arg->getBeginLoc()));
+				logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, arg->getBeginLoc()));
 			} else {
 				if(!RecursiveASTVisitor<NormaliseExprVisitor>::TraverseStmt(arg)) {
 					return false;
@@ -116,9 +119,9 @@ public:
 
 #define TraverseExprFn(kind, type)                                                                                     \
 	bool Traverse##kind(type* node) {                                                                                    \
-		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
+		logFnScope("for source line ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));                     \
                                                                                                                        \
-		auto transformResult = transform::transform##kind(scopedConfig->config##kind, *astContext, *node);                 \
+		auto transformResult = transform::transform##kind(scopedConfig->config##kind, ctxs.back(), *node);                 \
 		if(transformResult.do_rewrite) {                                                                                   \
 			if(!transformResult.to_hoist.empty()) {                                                                          \
 				to_hoist.emplace_back(std::move(transformResult.to_hoist));                                                    \
@@ -126,7 +129,7 @@ public:
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.expression);                         \
                                                                                                                        \
-			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
+			logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));             \
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \
@@ -135,14 +138,14 @@ public:
 
 #define TraverseStmtFn(type)                                                                                           \
 	bool Traverse##type(type* node) {                                                                                    \
-		logFnScope("for source line ", DisplaySourceLoc(astContext, node->getBeginLoc()));                                 \
+		logFnScope("for source line ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));                     \
                                                                                                                        \
-		auto transformResult = transform::transform##type(scopedConfig->config##type, *astContext, *node);                 \
+		auto transformResult = transform::transform##type(scopedConfig->config##type, ctxs.back(), *node);                 \
 		if(transformResult.do_rewrite) {                                                                                   \
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.statement);                          \
                                                                                                                        \
-			logln("Transformation applied at: ", DisplaySourceLoc(astContext, node->getBeginLoc()));                         \
+			logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));             \
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \
@@ -173,7 +176,7 @@ public:
 			// E.g., `switch(x) { default:; }` would become `switch(x) { default: }`, which causes a syntax error
 			if(checks::null_stmt(stmt)) {
 				rewriter.RemoveText(stmt->getSourceRange(), onlyRemoveOld);
-				logln("Null stmt removed at: ", DisplaySourceLoc(astContext, stmt->getBeginLoc()));
+				logln("Null stmt removed at: ", DisplaySourceLoc(ctxs.back().astContext, stmt->getBeginLoc()));
 				continue;
 			}
 
@@ -186,7 +189,7 @@ public:
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {
 				rewriter.RemoveText(parenExpr->getLParen(), onlyRemoveOld);
 				rewriter.RemoveText(parenExpr->getRParen(), onlyRemoveOld);
-				logln("Parenthesis removed at: ", DisplaySourceLoc(astContext, parenExpr->getBeginLoc()));
+				logln("Parenthesis removed at: ", DisplaySourceLoc(ctxs.back().astContext, parenExpr->getBeginLoc()));
 
 				stmt = parenExpr->getSubExpr();
 			}

@@ -1,7 +1,6 @@
 #include "CallArg.h"
 
 #include "../check/SimpleValue.h"
-#include "../util/UId.h"
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
@@ -18,8 +17,7 @@ std::optional<transform::CallArgConfig> transform::CallArgConfig::parse(rapidjso
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformCallArg(CallArgConfig const& config, clang::ASTContext& astContext,
-                                                clang::Expr& arg) {
+ExprTransformResult transform::transformCallArg(CallArgConfig const& config, Context& ctx, clang::Expr& arg) {
 	if(!config.enabled) {
 		return {};
 	}
@@ -30,16 +28,13 @@ ExprTransformResult transform::transformCallArg(CallArgConfig const& config, cla
 		return {};
 	}
 
-	std::string var_name = util::uid(astContext, "_CallArg");
+	std::string var_name = ctx.uid("_CallArg");
 
-	clang::VarDecl* vd = clang::VarDecl::Create(astContext, astContext.getTranslationUnitDecl(), clang::SourceLocation(),
-	                                            clang::SourceLocation(), &astContext.Idents.get(var_name), arg.getType(),
-	                                            nullptr, clang::StorageClass::SC_None);
+	clang::VarDecl* vd = clang::VarDecl::Create(
+	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
+	  &ctx.astContext->Idents.get(var_name), arg.getType(), nullptr, clang::StorageClass::SC_None);
 
-	std::string to_hoist =
-	  fmt::format("{} = ({});\n", *vd,
-	              clang::Lexer::getSourceText(clang::CharSourceRange::getTokenRange(arg.getSourceRange()),
-	                                          astContext.getSourceManager(), astContext.getLangOpts()));
+	std::string to_hoist = fmt::format("{} = ({});\n", *vd, ctx.source_text(arg.getSourceRange()));
 
 	return {std::move(var_name), std::move(to_hoist)};
 }
