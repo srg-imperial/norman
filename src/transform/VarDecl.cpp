@@ -10,6 +10,8 @@
 #include <clang/AST/ASTContext.h>
 #include <clang/Lex/Lexer.h>
 
+#include <llvm/Support/raw_ostream.h>
+
 #include <iterator>
 #include <string>
 
@@ -56,7 +58,7 @@ StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, cla
 		if(varDecl.isFileVarDecl() || varDecl.isStaticLocal()) {
 			// in C file vars and static locals have to be constant initialized
 		} else if(varDecl.isLocalVarDecl()) {
-			if(checks::reference(*init, varDecl)) {
+			if(!checks::reference(*init, varDecl)) {
 				if(llvm::isa<clang::InitListExpr>(init)) {
 					throw "unimplemented";
 				} else {
