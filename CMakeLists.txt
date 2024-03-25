@@ -13,7 +13,7 @@ find_package(Clang REQUIRED CONFIG HINTS "${LLVM_DIR}")
 FetchContent_Declare(
   fmtlib
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 10.1.1)
+  GIT_TAG 10.2.1)
   
 FetchContent_GetProperties(fmtlib)
 if(NOT fmtlib_POPULATED)
