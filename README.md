@@ -5,8 +5,9 @@ A minimally configured build using ninja:
 $ mkdir build
 $ cd build
 $ cmake -GNinja $PATH_TO_SOURCES
-$ ninja
+$ ninja       # build project
+$ ninja test  # run tests
 ```
 
 ### Relevant CMake Variables
-- `-DCMAKE_BUILD_TYPE` set to a value that matches your use case, e.g., `Debug` or `RelWithDebInfo` ([upstream docs](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html))
+- `-DCMAKE_BUILD_TYPE`: set to a value that matches your use case, e.g., `Debug` or `RelWithDebInfo` ([upstream docs](https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html))

@@ -67,61 +67,27 @@ build-prebuilt:
       --no-push-cache
       --destination "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}-llvm-${LLVM}"
 
-# test:
-#   stage: test
-#   needs: ["build-prebuilt"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
-#   extends: .full-matrix
-#   image: ${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}
-#   variables:
-#     GIT_STRATEGY: none
-#   script:
-#     - cd /product-program/build
-#     - ctest --output-on-failure
-#   after_script:
-#     - > # save output on failure
-#       if [ $CI_JOB_STATUS == 'failed' ]; then
-#         mkdir "${CI_PROJECT_DIR}/output"
-#         cd /product-program/build/test
-#         cp -r --parents */Output "${CI_PROJECT_DIR}/output/"
-#       fi
-#   artifacts:
-#     when: on_failure
-#     paths:
-#       - output
-#     expire_in: 1 week
-
-# test-sanitized:
-#   stage: test
-#   needs: ["build-base"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/254821 gets resolved
-#   parallel:
-#     matrix:
-#       - OS: ubuntu-22.04
-#         LLVM: [12]
-#   image: ${CI_REGISTRY_IMAGE}/ci/coreutils:${CI_COMMIT_SHA}-${OS}
-#   script:
-#     - mkdir build
-#     - cd build
-#     - cmake -GNinja
-#       -DCMAKE_C_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror"
-#       -DCMAKE_CXX_FLAGS="-fuse-ld=mold -Wall -Wextra -pedantic -Werror -fsanitize=address,undefined"
-#       -DLLVM_DIR=$(llvm-config-${LLVM} --libdir)
-#       ..
-#     - ninja -j4
-#     - ASAN_OPTIONS=detect_leaks=0 ctest --output-on-failure
-#   after_script:
-#     - pwd
-#     - > # save output on failure
-#       if [ $CI_JOB_STATUS == 'failed' ]; then
-#         mkdir output
-#         DIR="$(pwd)/output"
-#         cd build/test
-#         cp -r --parents */Output "$DIR"
-#       fi
-#   artifacts:
-#     when: on_failure
-#     paths:
-#       - output
-#     expire_in: 1 week
+test:
+  stage: test
+  needs: ["build-prebuilt"]  # we should make this better once https://gitlab.com/gitlab-org/gitlab/-/issues/423553 gets resolved
+  extends: .full-matrix
+  image: ${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-${OS}-llvm-${LLVM}
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - cd /norman/build
+    - CTEST_OUTPUT_ON_FAILURE=1 ninja test
+  after_script:
+    - > # save output on failure
+      if [ $CI_JOB_STATUS == 'failed' ]; then
+        rm -rf "${CI_PROJECT_DIR}/output"
+        cp -r /norman/build/test "${CI_PROJECT_DIR}/output"
+      fi
+  artifacts:
+    when: on_failure
+    paths:
+      - output
+    expire_in: 1 week
 
 format:
   stage: test

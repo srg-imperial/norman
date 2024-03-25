@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.20)
 project(norman)
 
+include(CTest)
 include(FetchContent)
 
 find_package(LLVM REQUIRED CONFIG HINTS "${LLVM_DIR}")
@@ -9,6 +10,9 @@ include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 find_package(Clang REQUIRED CONFIG HINTS "${LLVM_DIR}")
+
+message(${LLVM_BINARY_DIR})
+find_program(ClangFormat NAMES clang-format REQUIRED PATHS "${LLVM_BINARY_DIR}/bin" NO_DEFAULT_PATH)
 
 FetchContent_Declare(
   fmtlib
@@ -35,3 +39,4 @@ if(NOT LLVM_ENABLE_RTTI)
 endif()
 
 add_subdirectory("src")
+add_subdirectory("test")

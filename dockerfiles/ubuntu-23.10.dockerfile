@@ -4,29 +4,6 @@ FROM ${REGISTRY}/library/ubuntu:23.10 AS base
 ARG LLVM=15
 ARG JOBS=$(nproc)
 
-# build-essential: compilers for the main project
-# cmake: configure the main project
-# curl: klee-uclibc
-# file: cpack
-# flex: stp
-# git: used when bootstrapping coreutils
-# gperf: used when bootstrapping coreutils
-# libboost-all-dev: stp
-# libfmt-dev: direct dependency of the product program project
-# libgoogle-perftools-dev: klee
-# libgtest-dev: klee
-# libsqlite3-dev: klee
-# libz3-dev: klee
-# ninja-build: build the main project (faster than with `make`)
-# perl: stp
-# pipx: install `lit` & `wllvm`
-# python-is-python3: stp, klee-uclibc
-# python3: utility scripts (`/run-constructor.py`)
-# python3-tabulate: klee
-# rsync: used when bootstrapping coreutils
-# software-properties-common: provides `add-apt-repositories`
-# wget: used when bootstrapping coreutils
-# zlib1g-dev: minisat, stp, klee
 RUN \
   --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:23.10/var/cache/apt/ \
   --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:23.10/var/lib/apt/lists/ \
@@ -64,7 +41,6 @@ RUN \
     ssh \
     sudo \
     vim \
-    zsh \
     zstd \
   && mv /docker-clean /docker-gzip-indexes /etc/apt/apt.conf.d/
 
@@ -84,14 +60,16 @@ RUN \
   mkdir -p /.container/bin \
   && printf "#!/bin/bash\\nexec sudo '$(which docker)' "'"$@"'"\\n" > /.container/bin/docker
 
-ENV PATH="/.container/bin:/usr/lib/llvm-12/bin/:$PATH"
+ENV \
+  PATH="/.container/bin:/usr/lib/llvm-${LLVM}/bin/:$PATH" \
+  CTEST_OUTPUT_ON_FAILURE=1
 
 
 ## stage 2b: sources
 FROM base AS sources
 
-COPY ./ /normalize-transform/
-WORKDIR /normalize-transform
+COPY ./ /norman/
+WORKDIR /norman
 
 
 ## stage 3: prebuilt
