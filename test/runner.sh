@@ -20,7 +20,11 @@ mkdir -p "$(dirname "$3")"
 cp -r -- "$DIR/$3/" "$3/"
 
 # norman currently does not support the `--` syntax due to option parser limitations...
-"$1" "$3/input.c"
+if [[ -e "$3/config.json" ]] ; then
+	"$1" --config "$3/config.json" "$3/input.c"
+else
+	"$1" "$3/input.c"
+fi
 mv -- "$3/input.c" "$3/actual.c"
 
 "$2" -i -- "$3/"{actual,expected}.c

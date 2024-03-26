@@ -1,0 +1,8 @@
+{
+  "functions": [
+    {
+      "name": "foo",
+      "process": false
+    }
+  ]
+}
