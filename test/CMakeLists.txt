@@ -7,5 +7,11 @@ SET(TESTS
 )
 
 foreach(test IN ITEMS ${TESTS})
-  add_test(NAME ${test} COMMAND ${CMAKE_SOURCE_DIR}/test/runner.sh $<TARGET_FILE:norman> ${ClangFormat} ${test})
+  add_test(
+    NAME ${test}
+    COMMAND ${CMAKE_SOURCE_DIR}/test/runner.py
+      --norman $<TARGET_FILE:norman>
+      --clang-format ${ClangFormat}
+      ${test}
+  )
 endforeach()
