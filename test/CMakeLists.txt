@@ -1,9 +1,9 @@
 add_test(NAME _norman_exists COMMAND norman --version)
 
 SET(TESTS
-  "core/function selection"
-  "core/multiple functions"
-  "NullStmt/basic"
+  "core/function selection.test"
+  "core/multiple functions.test"
+  "NullStmt/basic.test"
 )
 
 foreach(test IN ITEMS ${TESTS})

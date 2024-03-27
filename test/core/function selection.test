@@ -1,3 +1,11 @@
+void foo() { ; }
+
+int main() { ; }
+---
+void foo() { ; }
+
+int main() { }
+---
 {
   "functions": [
     {
