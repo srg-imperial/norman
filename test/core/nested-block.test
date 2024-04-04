@@ -1,8 +1,8 @@
 void foo() { }
 
-int main() {
-  if (1) {
-    foo();
+int main() { 
+  {
+      foo();
   }
 }
 ---

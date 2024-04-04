@@ -169,6 +169,17 @@ public:
 	TraverseStmtFn(WhileStmt);
 
 	bool TraverseCompoundStmt(CompoundStmt* cstmt) {
+		if (!cstmt->body().empty() && std::next(cstmt->body().begin()) == cstmt->body().end()) {
+			auto* stmt = *cstmt->body().begin();
+			if (auto* ccstmt = llvm::dyn_cast<CompoundStmt>(stmt)) {
+				rewriter.RemoveText(ccstmt->getLBracLoc(), onlyRemoveOld);
+				rewriter.RemoveText(ccstmt->getRBracLoc(), onlyRemoveOld);
+				logln("Nested block removed at: ", DisplaySourceLoc(ctxs.back().astContext, ccstmt->getBeginLoc()));
+			
+				return true;
+			}
+		}
+
 		for(auto* stmt : cstmt->body()) {
 			assert(to_hoist.empty());
 
