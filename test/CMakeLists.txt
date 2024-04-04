@@ -3,7 +3,7 @@ add_test(NAME _norman_exists COMMAND norman --version)
 # All short tests are found by cmake
 file(GLOB_RECURSE SHORT_TESTS CONFIGURE_DEPENDS "*.test")
 
-# All short tests are found by cmake, based on the location of a file called `input.c`
+# All directory tests are found by cmake, based on the location of a file called `input.c`
 file(GLOB_RECURSE INPUT_C_FILES CONFIGURE_DEPENDS "input.c")
 set(DIR_TESTS "")
 foreach(f IN ITEMS ${INPUT_C_FILES})
