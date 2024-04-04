@@ -1,0 +1,21 @@
+void foo() { }
+
+int main() {
+  int x = 0;
+  if (x) {
+  } else {
+    foo();
+  }
+}
+---
+void foo() { }
+
+int main() {
+  int x;
+  x = 0;
+  bool _IfCond_3587;
+  _IfCond_3587 = (!x);
+  if (_IfCond_3587) {
+    foo();
+  }
+}

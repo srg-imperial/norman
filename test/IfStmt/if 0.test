@@ -1,0 +1,11 @@
+void foo() { }
+
+int main() {
+  if (0) {
+    foo();
+  }
+}
+---
+void foo() { }
+
+int main() { }

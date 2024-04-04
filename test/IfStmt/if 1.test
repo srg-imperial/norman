@@ -1,0 +1,15 @@
+void foo() { }
+
+int main() {
+  if (1) {
+    foo();
+  }
+}
+---
+void foo() { }
+
+int main() {
+  {
+    foo();
+  }
+}
