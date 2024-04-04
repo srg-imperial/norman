@@ -1,4 +1,14 @@
+# Add a "test" that builds the sources
+add_test(_test_build
+  "${CMAKE_COMMAND}"
+  --build "${CMAKE_BINARY_DIR}"
+  --config "$<CONFIG>"
+  --target norman
+)
+set_tests_properties(_test_build PROPERTIES FIXTURES_SETUP test_fixture)
+
 add_test(NAME _norman_exists COMMAND norman --version)
+set_tests_properties(_norman_exists PROPERTIES FIXTURES_REQUIRED test_fixture)
 
 # All short tests are found by cmake
 file(GLOB_RECURSE SHORT_TESTS CONFIGURE_DEPENDS "*.test")
@@ -19,4 +29,5 @@ foreach(test IN ITEMS ${SHORT_TESTS} ${DIR_TESTS})
       --clang-format ${ClangFormat}
       ${test}
   )
+  set_tests_properties(${test} PROPERTIES FIXTURES_REQUIRED test_fixture)
 endforeach()
