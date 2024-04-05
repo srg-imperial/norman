@@ -17,12 +17,12 @@ void foo() { }
 int main() {
   int x;
   x = 0;
-  bool _IfCond_main_1;
+  int _IfCond_main_1;
   _IfCond_main_1 = (!x);
   if (_IfCond_main_1) {
     foo();
   }
-  bool _IfCond_main_2;
+  int _IfCond_main_2;
   _IfCond_main_2 = (!x);
   if (_IfCond_main_2) {
     foo();

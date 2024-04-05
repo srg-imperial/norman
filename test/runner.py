@@ -53,6 +53,13 @@ def main():
       shutil.copyfile(SCRIPT_LOCATION / config, config)
     else:
       config = None
+
+    # norman will find a `compile_commands.json` if cmake creates it at the top of the build folder, which will
+    # cause unwanted behavior. Generating a phony `compile_flags.txt` is not great, but at least gives deterministic behavior.
+    if not (test / "compile_commands.json").exists() and not (test / "compile_flags.txt").exists():
+      with open(test / "compile_flags.txt", "w", encoding="utf-8") as f:
+        f.write("\n")
+
   else:
     parts = parse_test(test_source)
 
@@ -69,6 +76,11 @@ def main():
       config = test / "config.json"
       with open(config, "w", encoding="utf-8") as f:
         f.write(parts[2])
+
+    # norman will find a `compile_commands.json` if cmake creates it at the top of the build folder, which will
+    # cause unwanted behavior. Generating a phony `compile_flags.txt` is not great, but at least gives deterministic behavior.
+    with open(test / "compile_flags.txt", "w", encoding="utf-8") as f:
+      f.write("\n")
 
   # norman currently does not support the `--` syntax due to option parser limitations...
   if config is not None:
