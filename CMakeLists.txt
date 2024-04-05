@@ -11,7 +11,6 @@ add_definitions(${LLVM_DEFINITIONS})
 
 find_package(Clang REQUIRED CONFIG HINTS "${LLVM_DIR}")
 
-message(${LLVM_BINARY_DIR})
 find_program(ClangFormat NAMES clang-format REQUIRED PATHS "${LLVM_BINARY_DIR}/bin" NO_DEFAULT_PATH)
 
 FetchContent_Declare(
