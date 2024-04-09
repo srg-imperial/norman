@@ -1,3 +1,5 @@
+-- For loops that contain `continue` statements require a more complicated normalization.
+
 void foo() { }
 
 int main() {

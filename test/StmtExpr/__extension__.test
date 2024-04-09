@@ -1,3 +1,6 @@
+-- Statement expressions should be transformed into an appropriate block, even in the presence of the `__extension__`
+-- "unary prefix operator".
+
 int main() {
 	int pos = (int)__extension__({
 		42;

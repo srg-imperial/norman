@@ -1,3 +1,5 @@
+-- Blocks that are the only children of other blocks are superfluous and should be removed.
+
 void foo() { }
 
 int main() { 

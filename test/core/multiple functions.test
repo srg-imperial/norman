@@ -1,3 +1,5 @@
+-- By default, all functions should be normalized.
+
 void foo() { ; }
 
 int main() { ; }

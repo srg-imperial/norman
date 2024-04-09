@@ -1,3 +1,5 @@
+-- Normalization that removes a simply for loop by transforming it into a while loop.
+
 void foo() { }
 
 int main() {

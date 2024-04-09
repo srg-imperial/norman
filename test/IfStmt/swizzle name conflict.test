@@ -1,3 +1,5 @@
+-- The index of any identifier should be large enough such as not to conflict with existing variables.
+
 void foo() { }
 
 int main() {

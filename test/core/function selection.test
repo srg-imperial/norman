@@ -1,3 +1,5 @@
+-- A config file may disable processing for certain functions, such as those called `foo`.
+
 void foo() { ; }
 
 int main() { ; }

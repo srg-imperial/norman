@@ -1,13 +1,25 @@
+-- Conditional statements that can be proven true should just be executed. Their else statements should be removed.
+
 void foo() { }
+void bar() { }
+void baz() { }
 
 int main() {
   if (1) {
     foo();
   }
+  if (1) {
+    bar();
+  } else {
+    baz();
+  }
 }
 ---
 void foo() { }
+void bar() { }
+void baz() { }
 
 int main() {
-  foo();
+  { foo(); }
+  { bar(); }
 }

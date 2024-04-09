@@ -1,3 +1,5 @@
+-- Empty blocks should be removed.
+
 int main() { { } }
 ---
 int main() { }
