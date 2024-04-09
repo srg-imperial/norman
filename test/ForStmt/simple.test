@@ -1,0 +1,24 @@
+void foo() { }
+
+int main() {
+	for(int i = 0; i < 5; i++) {
+		foo();
+	}
+}
+---
+void foo() { }
+
+int main() {
+
+	int i;
+	i = 0;
+	_Bool _WhileCond_main_1;
+	_WhileCond_main_1 = (i < 5);
+	while(_WhileCond_main_1) {
+		{
+			{ foo(); }
+			i++;
+		}
+		_WhileCond_main_1 = (i < 5);
+	}
+}
