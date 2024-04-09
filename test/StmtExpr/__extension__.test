@@ -1,0 +1,14 @@
+int main() {
+	int pos = (int)__extension__({
+		42;
+	});
+}
+---
+int main() {
+	int pos;
+  int _StmtExpr_main_1;
+  {
+    _StmtExpr_main_1 = 42;
+  }
+  pos = ((int)__extension__ _StmtExpr_main_1);
+}

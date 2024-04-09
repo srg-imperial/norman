@@ -45,5 +45,7 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 	}
 
 	out = fmt::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(Stmts->body_back()->getSourceRange()));
-	return {std::move(var_name), std::move(to_hoist)};
+	// we need to protect against accidental token concatination, as we now return a valid identifier where there were
+	// parentheses previously
+	return {fmt::format(" {} ", var_name), std::move(to_hoist)};
 }
