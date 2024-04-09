@@ -10,6 +10,8 @@ int main() {
 void foo() { }
 
 int main() {
+-- the following empty line is a leftover from an extra block that got introduced and removed again, as it is directly
+-- surrounded by another blok (the function block).
 
 	int i;
 	i = 0;

@@ -10,15 +10,45 @@ SCRIPT_LOCATION = os.path.dirname(os.path.realpath(__file__))
 
 def parse_test(test):
   with open(test, "r", encoding="utf-8") as f:
-    data = f.read()
-  match = re.fullmatch(r"(?:(.*?)\n)?---(\n.*?)(?:\n---\n(.*))?", data, flags=re.DOTALL)
-  if match is None:
-    print(f"Cannot parse test file `{test}`")
-    os._exit(1)
+    dashes = False
+    input = []
+    for line in f:
+      if line == "---\n" or line == "---\r\n":
+        dashes = True
+        break
+      elif line.startswith("--"):
+        pass
+      else:
+        input.append(line)
+    if not dashes:
+      print(f"Cannot parse test file `{test}`: missing expected output")
+      os._exit(1)
+
+    dashes = False
+    expected = []
+    for line in f:
+      if line == "---\n" or line == "---\r\n":
+        dashes = True
+        break
+      elif line.startswith("--"):
+        pass
+      else:
+        expected.append(line)
+    
+    if dashes:
+      config = []
+      for line in f:
+        if line.startswith("--"):
+          pass
+        else:
+          config.append(line)
+    else:
+      config = None
+
   return (
-    "" if match.group(1) is None else match.group(1).strip(),
-    match.group(2).strip(),
-    None if match.group(3) is None else match.group(3).strip(),
+    "".join(input).strip(),
+    "".join(expected).strip(),
+    None if config is None else "".join(config).strip(),
   )
 
 def main():
