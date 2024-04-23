@@ -1,0 +1,39 @@
+-- Tests the optimization for do-while normalization when the condition is statically false
+-- This rewriting is invalid when a naked `break` or `continue` is present in the loop
+
+int main() {
+	int x = 0;
+	do {
+		++x;
+		if (x) {
+			break;
+		} else {
+			continue;
+		}
+	} while(0);
+}
+---
+int main() {
+	int x;
+	x = 0;
+	_Bool _DoStmt_main_1;
+	_DoStmt_main_1 = 1;
+	while(1) {
+		int _IfCond_main_1;
+		_IfCond_main_1 = (!_DoStmt_main_1);
+		if(_IfCond_main_1) {
+			break;
+		}
+		{
+			_DoStmt_main_1 = 0;
+			{
+				++x;
+				if(x) {
+					break;
+				} else {
+					continue;
+				}
+			}
+		}
+	}
+}

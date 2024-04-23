@@ -62,11 +62,23 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, Conte
 		}
 	}
 
-	if(!checks::label(body)) {
-		append_as_compound(result, ctx, body);
-		fmt::format_to(std::back_inserter(result), "\nwhile({}) ", ctx.source_text(cond->getSourceRange()));
-		append_as_compound(result, ctx, body);
-		return {std::move(result)};
+	if(!checks::naked_continue(body)) {
+		if(!checks::label(body) && !checks::naked_break(body)) {
+			append_as_compound(result, ctx, body);
+			fmt::format_to(std::back_inserter(result), "\nwhile({}) ", ctx.source_text(cond->getSourceRange()));
+			append_as_compound(result, ctx, body);
+			return {std::move(result)};
+		} else {
+			auto var_name = ctx.uid("_DoCond");
+
+			fmt::format_to(std::back_inserter(result), "_Bool {} = 1;\nwhile({}) {{\n", var_name, var_name);
+
+			append_as_compound(result, ctx, body);
+
+			fmt::format_to(std::back_inserter(result), "\n{} = ({});\n}}", var_name, ctx.source_text(cond->getSourceRange()));
+
+			return {std::move(result)};
+		}
 	}
 
 	auto var_name = ctx.uid("_DoStmt");

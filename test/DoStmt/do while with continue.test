@@ -1,0 +1,38 @@
+-- Tests the optimization for do-while normalization when a naked `continue` statement is present in the body of the
+-- loop
+
+int main() {
+	int x = 0;
+	do {
+		++x;
+		continue;
+	} while(x);
+}
+---
+int main() {
+	int x;
+	x = 0;
+	_Bool _DoStmt_main_1;
+	_DoStmt_main_1 = 1;
+	while(1) {
+		int _IfCond_main_1;
+		_Bool _LOr_main_1;
+		_LOr_main_1 = _DoStmt_main_1;
+		int _IfCond_main_2;
+		_IfCond_main_2 = (!_LOr_main_1);
+		if(_IfCond_main_2) {
+			_LOr_main_1 = x;
+		}
+		_IfCond_main_1 = (!_LOr_main_1);
+		if(_IfCond_main_1) {
+			break;
+		}
+		{
+			_DoStmt_main_1 = 0;
+			{
+				++x;
+				continue;
+			}
+		}
+	}
+}

@@ -1,0 +1,18 @@
+-- Tests the optimization for do-while normalization when the condition is statically true
+
+int main() {
+	int x = 0;
+	do {
+		++x;
+		break;
+	} while(1);
+}
+---
+int main() {
+	int x;
+	x = 0;
+	while(1) {
+		++x;
+		break;
+	}
+}

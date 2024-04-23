@@ -1,0 +1,19 @@
+-- Tests the optimization for do-while normalization
+
+int main() {
+	int x = 0;
+	do {
+		++x;
+	} while(x);
+}
+---
+int main() {
+	int x;
+	x = 0;
+	{
+		++x;
+	}
+	while(x) {
+		++x;
+	}
+}

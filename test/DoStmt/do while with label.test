@@ -1,0 +1,21 @@
+-- Tests the optimization for do-while normalization when a label is present in the body of the loop
+
+int main() {
+	int x = 0;
+	do {
+		stmt: ++x;
+	} while(x);
+}
+---
+int main() {
+	int x;
+	x = 0;
+	_Bool _DoCond_main_1;
+	_DoCond_main_1 = 1;
+	while(_DoCond_main_1) {
+		{
+			stmt: ++x;
+		}
+		_DoCond_main_1 = x;
+	}
+}
