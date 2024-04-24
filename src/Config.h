@@ -3,6 +3,7 @@
 #include "transform/CallArg.h"
 #include "transform/CommaOperator.h"
 #include "transform/ConditionalOperator.h"
+#include "transform/DeclStmt.h"
 #include "transform/DoStmt.h"
 #include "transform/ForStmt.h"
 #include "transform/IfStmt.h"
@@ -33,6 +34,7 @@ public:
 		transform::CallArgConfig configCallArg;
 		transform::CommaOperatorConfig configCommaOperator;
 		transform::ConditionalOperatorConfig configConditionalOperator;
+		transform::DeclStmtConfig configDeclStmt;
 		transform::DoStmtConfig configDoStmt;
 		transform::ForStmtConfig configForStmt;
 		transform::IfStmtConfig configIfStmt;

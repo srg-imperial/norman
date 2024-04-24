@@ -1,0 +1,9 @@
+-- The well-known typedef-struct trick.
+
+typedef struct A {
+  int x;
+} A;
+---
+typedef struct A {
+  int x;
+} A;

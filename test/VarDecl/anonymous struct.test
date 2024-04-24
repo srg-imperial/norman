@@ -1,0 +1,15 @@
+-- Splitting structs is hard, if the struct is anonymous.
+
+int main() {
+	struct {
+		int x[2];
+	} s = {.x = {[1] = 1}};
+}
+---
+int main() {
+	struct _Decl_main_1 {
+		int x[2];
+	};
+	struct _Decl_main_1 s;
+	s = (struct _Decl_main_1){.x = {[1] = 1}};
+}

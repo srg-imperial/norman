@@ -3,6 +3,7 @@
 #include "transform/CallArg.h"
 #include "transform/CommaOperator.h"
 #include "transform/ConditionalOperator.h"
+#include "transform/DeclStmt.h"
 #include "transform/DoStmt.h"
 #include "transform/ForStmt.h"
 #include "transform/IfStmt.h"
@@ -33,6 +34,8 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/InitLLVM.h>
 
+#include "util/fmtlib_clang.h"
+#include "util/fmtlib_llvm.h"
 #include <fmt/format.h>
 
 #include <algorithm>
@@ -46,7 +49,59 @@
 
 using namespace clang;
 
-class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
+class TUFixupVisitor : public RecursiveASTVisitor<TUFixupVisitor> {
+	Rewriter& rewriter;
+	Rewriter::RewriteOptions onlyRemoveOld;
+
+public:
+	explicit TUFixupVisitor(CompilerInstance*, Config const&, Rewriter& rewriter)
+	  : rewriter(rewriter) {
+		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
+		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
+	}
+
+	void reinsertDecl(Context const& ctx, Decl* decl) {
+		auto text = ctx.source_text(decl->getSourceRange());
+		rewriter.RemoveText(decl->getSourceRange(), onlyRemoveOld);
+		rewriter.InsertTextAfter(decl->getBeginLoc(), text);
+		rewriter.InsertTextAfter(decl->getBeginLoc(), ";");
+	}
+
+	bool TraverseTranslationUnitDecl(TranslationUnitDecl* tuDecl) {
+		auto ctx = Context::FileLevel(tuDecl->getASTContext());
+
+		for(auto* decl : tuDecl->decls()) {
+			if(auto* recordDecl = llvm::dyn_cast<RecordDecl>(decl)) {
+				if(recordDecl->getName().empty()) {
+					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					recordDecl->setDeclName(clang::DeclarationName{id});
+					rewriter.RemoveText(recordDecl->getSourceRange(), onlyRemoveOld);
+					rewriter.InsertTextAfter(recordDecl->getBeginLoc(), fmt::format("{};", *recordDecl));
+				} else {
+					reinsertDecl(ctx, decl);
+				}
+			} else if(auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) {
+				if(enumDecl->getName().empty()) {
+					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					enumDecl->setDeclName(clang::DeclarationName{id});
+					rewriter.RemoveText(enumDecl->getSourceRange(), onlyRemoveOld);
+					rewriter.InsertTextAfter(enumDecl->getBeginLoc(), fmt::format("{};", *enumDecl));
+				} else {
+					reinsertDecl(ctx, decl);
+				}
+			} else if(auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
+				rewriter.RemoveText(varDecl->getSourceRange(), onlyRemoveOld);
+				rewriter.InsertTextAfter(varDecl->getBeginLoc(), fmt::format("{};", *varDecl));
+			} else {
+				reinsertDecl(ctx, decl);
+			}
+		}
+
+		return true;
+	}
+};
+
+class NormaliseVisitor : public RecursiveASTVisitor<NormaliseVisitor> {
 	std::vector<Context> ctxs;
 	Config const& config;
 	Config::ScopedConfig const* scopedConfig{};
@@ -55,7 +110,7 @@ class NormaliseExprVisitor : public RecursiveASTVisitor<NormaliseExprVisitor> {
 	std::vector<std::string> to_hoist;
 
 public:
-	explicit NormaliseExprVisitor(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
+	explicit NormaliseVisitor(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
 	  : config(config)
 	  , scopedConfig(&config.fileScope())
 	  , rewriter(rewriter) {
@@ -63,6 +118,11 @@ public:
 		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
 
 		ctxs.push_back(Context::FileLevel(CI->getASTContext()));
+	}
+
+	bool TraverseEmptyDecl(EmptyDecl* emptyDecl) {
+		rewriter.RemoveText(emptyDecl->getSourceRange(), onlyRemoveOld);
+		return true;
 	}
 
 	bool TraverseFunctionDecl(FunctionDecl* fdecl) {
@@ -101,7 +161,7 @@ public:
 
 				logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, arg->getBeginLoc()));
 			} else {
-				if(!RecursiveASTVisitor<NormaliseExprVisitor>::TraverseStmt(arg)) {
+				if(!RecursiveASTVisitor<NormaliseVisitor>::TraverseStmt(arg)) {
 					return false;
 				}
 			}
@@ -115,7 +175,7 @@ public:
 			case clang::BinaryOperator::Opcode::BO_Comma: return TraverseCommaOperator(binop);
 			case clang::BinaryOperator::Opcode::BO_LAnd: return TraverseLAndOperator(binop);
 			case clang::BinaryOperator::Opcode::BO_LOr: return TraverseLOrOperator(binop);
-			default: return RecursiveASTVisitor<NormaliseExprVisitor>::TraverseBinaryOperator(binop);
+			default: return RecursiveASTVisitor<NormaliseVisitor>::TraverseBinaryOperator(binop);
 		}
 	}
 
@@ -135,7 +195,7 @@ public:
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \
-		return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                            \
+		return RecursiveASTVisitor<NormaliseVisitor>::Traverse##type(node);                                                \
 	}
 
 #define TraverseStmtFn(type)                                                                                           \
@@ -151,7 +211,7 @@ public:
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \
-		return RecursiveASTVisitor<NormaliseExprVisitor>::Traverse##type(node);                                            \
+		return RecursiveASTVisitor<NormaliseVisitor>::Traverse##type(node);                                                \
 	}
 
 	TraverseExprFn(CommaOperator, BinaryOperator);
@@ -163,6 +223,7 @@ public:
 	TraverseExprFn(StringLiteral, StringLiteral);
 	TraverseExprFn(UnaryExprOrTypeTraitExpr, UnaryExprOrTypeTraitExpr);
 
+	TraverseStmtFn(DeclStmt);
 	TraverseStmtFn(DoStmt);
 	TraverseStmtFn(ForStmt);
 	TraverseStmtFn(IfStmt);
@@ -228,7 +289,7 @@ public:
 				--i;
 				rewriter.InsertTextBefore(stmt->getBeginLoc(), to_hoist[i]);
 			}
-			if (!to_hoist.empty() && stmt != *iter) {
+			if(!to_hoist.empty() && stmt != *iter) {
 				// Some `clang::Stmt`s (e.g., `int x;`) are not actually "statements" in the sense that they are valid targets
 				// for labels and similar constructs.
 				// To make it a bit easier to use, we insert a null statement to serve as a target instead.
@@ -249,28 +310,28 @@ public:
 	}
 };
 
-class NormaliseExprASTConsumer final : public ASTConsumer {
-	NormaliseExprVisitor visitor;
+template <typename Visitor> class NormanASTConsumer final : public ASTConsumer {
+	Visitor visitor;
 
 public:
-	explicit NormaliseExprASTConsumer(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
+	explicit NormanASTConsumer(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
 	  : visitor{CI, config, rewriter} { }
 
 	void HandleTranslationUnit(ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
 };
 
-class NormaliseExprFrontendAction final : public ASTFrontendAction {
+template <typename Consumer> class NormanFrontendAction final : public ASTFrontendAction {
 	Config const& config;
 	Rewriter rewriter;
 	bool& rewritten;
 
 public:
-	NormaliseExprFrontendAction(bool* rewritten, Config const* config)
+	NormanFrontendAction(bool* rewritten, Config const* config)
 	  : config{*config}
 	  , rewritten{*rewritten} { }
 
 	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) override {
-		return std::make_unique<NormaliseExprASTConsumer>(&CI, config, rewriter);
+		return std::make_unique<Consumer>(&CI, config, rewriter);
 	}
 
 	bool PrepareToExecuteAction(CompilerInstance& CI) override {
@@ -356,6 +417,19 @@ int main(int argc, const char** argv) {
 		}
 	}
 
+	{
+		clang::tooling::ClangTool Tool{op->getCompilations(), op->getSourcePathList()[0]};
+		// disable printing warnings
+		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
+
+		bool rewritten;
+		using RewriteDeclAction = NormanFrontendAction<NormanASTConsumer<TUFixupVisitor>>;
+		int result = Tool.run(&(*newFrontendActionDataFactory<RewriteDeclAction>(&rewritten, &config)));
+		if(result != EXIT_SUCCESS) {
+			return result;
+		}
+	}
+
 	bool rewritten = true;
 	std::uint64_t count = 0;
 	while(rewritten && count < maxIterations.getValue()) {
@@ -363,7 +437,8 @@ int main(int argc, const char** argv) {
 		// disable printing warnings
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
 
-		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseExprFrontendAction>(&rewritten, &config)));
+		using NormaliseAction = NormanFrontendAction<NormanASTConsumer<NormaliseVisitor>>;
+		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseAction>(&rewritten, &config)));
 		if(result != EXIT_SUCCESS) {
 			return result;
 		}

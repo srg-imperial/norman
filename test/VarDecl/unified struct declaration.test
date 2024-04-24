@@ -1,0 +1,15 @@
+-- Splitting structs is hard, if the struct is declared in the same declaration as the variable.
+
+int main() {
+	struct S {
+		int x[2];
+	} s = {.x = {[1] = 1}};
+}
+---
+int main() {
+	struct S {
+		int x[2];
+	};
+	struct S s;
+	s = (struct S){.x = {[1] = 1}};
+}

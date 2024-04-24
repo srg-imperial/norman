@@ -1,0 +1,18 @@
+-- Splitting structs, even with embedded arrays, is fairly simple, if the struct is declared beforehand.
+
+struct S {
+	int x[2];
+};
+
+int main() {
+	struct S s = {.x = {[1] = 1}};
+}
+---
+struct S {
+	int x[2];
+};
+
+int main() {
+	struct S s;
+	s = (struct S){.x = {[1] = 1}};
+}

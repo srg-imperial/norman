@@ -97,6 +97,7 @@ namespace {
 		CONFIG_CASE(CallArg)
 		CONFIG_CASE(CommaOperator)
 		CONFIG_CASE(ConditionalOperator)
+		CONFIG_CASE(DeclStmt)
 		CONFIG_CASE(DoStmt)
 		CONFIG_CASE(ForStmt)
 		CONFIG_CASE(IfStmt)

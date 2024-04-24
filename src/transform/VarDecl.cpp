@@ -23,12 +23,6 @@ std::optional<transform::VarDeclConfig> transform::VarDeclConfig::parse(rapidjso
 				return true;
 			}
 		}
-		if(member.name == "graceful") {
-			if(member.value.IsBool()) {
-				config.graceful = member.value.GetBool();
-				return true;
-			}
-		}
 		return false;
 	});
 }
@@ -40,18 +34,34 @@ namespace {
 			if(config.removeLocalConst) {
 				type.removeLocalConst();
 			} else {
-				if(config.graceful) {
-					return {};
-				} else {
-					throw "Split of const variable declaration required";
-				}
+				throw "Split of const variable declaration required";
 			}
 		}
+
 		clang::VarDecl* vd = clang::VarDecl::Create(*ctx.astContext, varDecl.getDeclContext(), clang::SourceLocation(),
 		                                            clang::SourceLocation(), varDecl.getIdentifier(), type, nullptr,
 		                                            varDecl.getStorageClass());
 
-		return fmt::format("{};\n{} = ({});", *vd, varDecl.getName(), ctx.source_text(varDecl.getInit()->getSourceRange()));
+		if(auto init = varDecl.getInit(); llvm::isa<clang::InitListExpr>(init)) {
+			if(type.getTypePtr()->isArrayType()) {
+				char const* volatileString = type.isVolatileQualified() ? "volatile" : "";
+				std::string indexName = ctx.uid("_VarDecl_i");
+				std::string ptrName = ctx.uid("_VarDecl_p");
+
+				return fmt::format("{};\n{} {};char {}* {}; {} = (char {}*)&({}){};\nfor({} = 0; {} < {}; ++{}) {{\n((char "
+				                   "{}*)&{})[{}] = {}[{}];\n}};",
+				                   *vd, static_cast<clang::QualType>(ctx.astContext->getSizeType()).getAsString(), indexName,
+				                   volatileString, ptrName, ptrName, volatileString, type.getAsString(),
+				                   ctx.source_text(init->getSourceRange()), indexName, indexName,
+				                   ctx.astContext->getTypeSize(type.getTypePtr()), indexName, volatileString, varDecl.getName(),
+				                   indexName, ptrName, indexName);
+			} else {
+				return fmt::format("{};\n{} = ({}){};", *vd, varDecl.getName(), type.getAsString(),
+				                   ctx.source_text(init->getSourceRange()));
+			}
+		} else {
+			return fmt::format("{};\n{} = ({});", *vd, varDecl.getName(), ctx.source_text(init->getSourceRange()));
+		}
 	}
 } // namespace
 
@@ -60,20 +70,9 @@ StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, Con
 		return {};
 	}
 
-	if(clang::Expr* init = varDecl.getInit()) {
-		if(varDecl.isLocalVarDecl() && !varDecl.isStaticLocal()) {
-			if(llvm::isa<clang::InitListExpr>(init)) {
-				if(config.graceful) {
-					return {};
-				} else {
-					throw "unimplemented";
-				}
-			} else {
-				// SLIGHT SEMANTIC CHANGE if the variable is `const`
-				// TODO: only transform if there is a reason to
-				return {split(config, ctx, varDecl)};
-			}
-		}
+	if(varDecl.isLocalVarDecl() && !varDecl.isStaticLocal() && varDecl.getInit()) {
+		return {split(config, ctx, varDecl)};
+	} else {
+		return {};
 	}
-	return {};
 }

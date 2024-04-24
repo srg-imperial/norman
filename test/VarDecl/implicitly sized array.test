@@ -1,0 +1,24 @@
+-- Arrays with implicit size need to be normalized to concrete sizes, and then split. This operation is fairly nontrivial.
+
+int main() {
+	int x[] = {1, 2};
+}
+---
+int main() {
+	int x[2];
+	unsigned long _VarDecl_i_main_1;
+	char* _VarDecl_p_main_1;
+	_VarDecl_p_main_1 = (char*)&(int[2]){1, 2};
+	{
+		_VarDecl_i_main_1 = 0;
+		_Bool _WhileCond_main_1;
+		_WhileCond_main_1 = (_VarDecl_i_main_1 < 64);
+		while(_WhileCond_main_1) {
+			{
+				{ ((char*)&x)[_VarDecl_i_main_1] = _VarDecl_p_main_1[_VarDecl_i_main_1]; }
+				++_VarDecl_i_main_1;
+			}
+			_WhileCond_main_1 = (_VarDecl_i_main_1 < 64);
+		}
+	}
+}

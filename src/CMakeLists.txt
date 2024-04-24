@@ -10,6 +10,7 @@ add_executable(norman
   transform/CallArg.cpp
   transform/CommaOperator.cpp
   transform/ConditionalOperator.cpp
+  transform/DeclStmt.cpp
   transform/DoStmt.cpp
   transform/ForStmt.cpp
   transform/IfStmt.cpp

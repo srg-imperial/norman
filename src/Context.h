@@ -12,6 +12,7 @@ struct Context {
 	std::string uidMarker;
 	std::set<clang::LabelDecl*> usedLabels;
 
+	static Context DeclRewriting(clang::ASTContext& astContext) noexcept;
 	static Context FileLevel(clang::ASTContext& astContext) noexcept;
 	static Context FunctionLevel(clang::ASTContext& astContext, clang::FunctionDecl& fdecl);
 

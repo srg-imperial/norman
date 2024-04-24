@@ -1,0 +1,19 @@
+-- C allows the declaration of a type and a variable in one go.
+
+struct {
+  int x;
+} a;
+
+struct {
+  int y;
+} b = {1};
+---
+struct _Decl__1 {
+	int x;
+};
+struct _Decl__1 a;
+
+struct _Decl__2 {
+	int y;
+};
+struct _Decl__2 b = {1};

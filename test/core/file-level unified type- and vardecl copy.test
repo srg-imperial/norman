@@ -1,0 +1,19 @@
+-- C allows the declaration of a type and a variable in one go.
+
+struct A {
+  int x;
+} a;
+
+struct B {
+  int y;
+} b = {1};
+---
+struct A {
+	int x;
+};
+struct A a;
+
+struct B {
+	int y;
+};
+struct B b = {1};
