@@ -1,0 +1,18 @@
+-- If the while contains labels, it cannot be removed even if the condition is statically false
+
+int main() {
+	int x = 0;
+	while(0) {
+		goto stmt;
+		stmt: ++x;
+	}
+}
+---
+int main() {
+	int x;
+	x = 0;
+	while(0) {
+		goto stmt;
+		stmt: ++x;
+	}
+}

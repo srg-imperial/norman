@@ -169,7 +169,7 @@ public:
 	TraverseStmtFn(WhileStmt);
 
 	bool TraverseCompoundStmt(CompoundStmt* cstmt) {
-		if(!cstmt->body().empty() && std::next(cstmt->body().begin()) == cstmt->body().end()) {
+		if(!cstmt->body_empty() && std::next(cstmt->body().begin()) == cstmt->body().end()) {
 			auto* stmt = *cstmt->body().begin();
 			if(auto* ccstmt = llvm::dyn_cast<CompoundStmt>(stmt)) {
 				rewriter.RemoveText(ccstmt->getLBracLoc(), onlyRemoveOld);
@@ -180,7 +180,8 @@ public:
 			}
 		}
 
-		for(auto* stmt : cstmt->body()) {
+		for(CompoundStmt::body_iterator iter = cstmt->body_begin(), end = cstmt->body_end(); iter != end; ++iter) {
+			clang::Stmt* stmt = *iter;
 			assert(to_hoist.empty());
 
 			// In general, we cannot remove labeled or attributed statements.
@@ -197,16 +198,26 @@ public:
 			while(auto labelStmt = dyn_cast<LabelStmt>(stmt)) {
 				auto labelDecl = labelStmt->getDecl();
 				if(ctxs.back().usedLabels.count(labelDecl)) {
-				stmt = labelStmt->getSubStmt();
+					stmt = labelStmt->getSubStmt();
 				} else {
 					rewriter.RemoveText(labelStmt->getSourceRange());
-					rewriter.InsertTextBefore(labelStmt->getBeginLoc(), ctxs.back().source_text(labelStmt->getSubStmt()->getSourceRange()));
+					rewriter.InsertTextBefore(labelStmt->getBeginLoc(),
+					                          ctxs.back().source_text(labelStmt->getSubStmt()->getSourceRange()));
 					rewritten = true;
 					break;
 				}
 			}
 			if(rewritten) {
 				continue;
+			}
+
+			// If the next statement is safe from removal, we can remove labelled null statements, as this will leave us with
+			// the effectively same target
+			if(checks::null_stmt(stmt)) {
+				auto next = std::next(iter);
+				if(next != end && !checks::null_stmt(*next)) {
+					rewriter.RemoveText(stmt->getSourceRange());
+				}
 			}
 
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {

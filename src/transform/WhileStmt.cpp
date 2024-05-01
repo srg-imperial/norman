@@ -1,5 +1,7 @@
 #include "WhileStmt.h"
 
+#include "../check/Label.h"
+#include "../check/NakedCaseOrDefault.h"
 #include "../check/NakedContinue.h"
 #include "../check/SimpleValue.h"
 
@@ -14,6 +16,8 @@
 
 #include <iterator>
 #include <string>
+
+using namespace std::literals;
 
 std::optional<transform::WhileStmtConfig> transform::WhileStmtConfig::parse(rapidjson::Value const& v) {
 	return BaseConfig::parse<transform::WhileStmtConfig>(
@@ -38,6 +42,19 @@ StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config,
 
 	clang::Expr* cond = whileStmt.getCond()->IgnoreImpCasts();
 	clang::Stmt* body = whileStmt.getBody();
+
+	// If the condition is a constant false, we can deconstruct the while statement.
+	if(!checks::label(*body) && !checks::naked_case_or_default(*body)) {
+		if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
+			if(!cond_val) {
+				if(cond->HasSideEffects(*ctx.astContext) || checks::label(*cond) || checks::naked_case_or_default(*cond)) {
+					return {fmt::format("{};", ctx.source_text(cond->getSourceRange()))};
+				} else {
+					return {";"s};
+				}
+			}
+		}
+	}
 
 	if(checks::isSimpleValue(*cond) && llvm::isa<clang::CompoundStmt>(body)) {
 		return {};

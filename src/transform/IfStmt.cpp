@@ -17,6 +17,8 @@
 #include <iterator>
 #include <string>
 
+using namespace std::literals;
+
 std::optional<transform::IfStmtConfig> transform::IfStmtConfig::parse(rapidjson::Value const& v) {
 	return BaseConfig::parse<transform::IfStmtConfig>(
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
@@ -80,7 +82,11 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 					append_as_compound(result, ctx, *else_stmt);
 				}
 			}
-			return {std::move(result)};
+			if(result.empty()) {
+				return {";"s};
+			} else {
+				return {std::move(result)};
+			}
 		}
 	}
 

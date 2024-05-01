@@ -1,0 +1,13 @@
+-- If the while condition is statically false, the while can be removed
+
+int main() {
+	int x = 0;
+	while(0) {
+		++x;
+	}
+}
+---
+int main() {
+	int x;
+	x = 0;
+}

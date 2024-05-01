@@ -1,0 +1,17 @@
+-- Statements cannot be removed during the initial transform, they must be replaced with null statements
+
+void foo() { }
+
+int main() {
+  goto stmt;
+  stmt: if (0) {
+    foo();
+  }
+}
+---
+void foo() { }
+
+int main() {
+  goto stmt;
+  stmt: ;
+}
