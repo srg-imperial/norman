@@ -280,7 +280,13 @@ public:
 
 	void EndSourceFileAction() override {
 		if(RewriteBuffer const* rb = rewriter.getRewriteBufferFor(rewriter.getSourceMgr().getMainFileID())) {
+#if LLVM_VERSION_MAJOR > 17
+			auto fileEntryRef = rewriter.getSourceMgr().getFileEntryRefForID(rewriter.getSourceMgr().getMainFileID());
+			assert(fileEntryRef.has_value());
+			auto name = fileEntryRef->getName();
+#else
 			auto name = rewriter.getSourceMgr().getFileEntryForID(rewriter.getSourceMgr().getMainFileID())->getName();
+#endif
 
 			std::error_code error_code;
 			llvm::raw_fd_ostream outFile{name, error_code};
