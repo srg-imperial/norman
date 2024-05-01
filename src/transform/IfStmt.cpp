@@ -1,5 +1,6 @@
 #include "IfStmt.h"
 
+#include "../check/Label.h"
 #include "../check/NullStmt.h"
 #include "../check/SimpleValue.h"
 
@@ -63,21 +64,23 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 	bool else_stmt_is_null_stmt = checks::null_stmt(else_stmt);
 
 	// If the condition is a constant, we can deconstruct the if statement.
-	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
-		std::string result;
-		if(cond->HasSideEffects(*ctx.astContext)) {
-			result = fmt::format("{};", ctx.source_text(cond->getSourceRange()));
-		}
-		if(cond_val) {
-			if(!then_stmt_is_null_stmt) {
-				append_as_compound(result, ctx, *then_stmt);
+	if(!checks::label(ifStmt)) {
+		if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
+			std::string result;
+			if(cond->HasSideEffects(*ctx.astContext)) {
+				result = fmt::format("{};", ctx.source_text(cond->getSourceRange()));
 			}
-		} else {
-			if(!else_stmt_is_null_stmt) {
-				append_as_compound(result, ctx, *else_stmt);
+			if(cond_val) {
+				if(!then_stmt_is_null_stmt) {
+					append_as_compound(result, ctx, *then_stmt);
+				}
+			} else {
+				if(!else_stmt_is_null_stmt) {
+					append_as_compound(result, ctx, *else_stmt);
+				}
 			}
+			return {std::move(result)};
 		}
-		return {std::move(result)};
 	}
 
 	// We never want to keep a null statement as the then condition

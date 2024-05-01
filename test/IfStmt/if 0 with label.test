@@ -1,0 +1,21 @@
+-- Conditional statements that can be proven false must not be removed if the contain a label.
+
+void foo() { }
+
+int main() {
+  goto foo;
+
+  if (0) {
+    foo: foo();
+  }
+}
+---
+void foo() { }
+
+int main() {
+  goto foo;
+
+  if (0) {
+    foo: foo();
+  }
+}
