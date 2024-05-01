@@ -11,8 +11,8 @@ variables:
     matrix:
       - OS: ubuntu-22.04
         LLVM: [12, 13, 14, 15]
-      - OS: ubuntu-23.10
-        LLVM: [13, 14, 15, 16, 17]
+      - OS: ubuntu-24.04
+        LLVM: [14, 15, 16, 17, 18]
 
 build-base:
   stage: build

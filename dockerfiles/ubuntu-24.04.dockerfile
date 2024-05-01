@@ -1,12 +1,12 @@
 ## stage 1: setup base image
 ARG REGISTRY=docker.io
-FROM ${REGISTRY}/library/ubuntu:23.10 AS base
+FROM ${REGISTRY}/library/ubuntu:24.04 AS base
 ARG LLVM=15
 ARG JOBS=$(nproc)
 
 RUN \
-  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:23.10/var/cache/apt/ \
-  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:23.10/var/lib/apt/lists/ \
+  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:24.04/var/cache/apt/ \
+  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:24.04/var/lib/apt/lists/ \
   mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes / \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     build-essential \
@@ -30,8 +30,8 @@ ENV LLVM_COMPILER=clang LLVM_COMPILER_PATH=/usr/lib/llvm-${LLVM}/bin/
 ## stage 2a: devcontainer
 FROM base AS devcontainer
 RUN \
-  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:23.10/var/cache/apt/ \
-  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:23.10/var/lib/apt/lists/ \
+  --mount=type=cache,sharing=locked,target=/var/cache/apt/,id=ubuntu:24.04/var/cache/apt/ \
+  --mount=type=cache,sharing=locked,target=/var/lib/apt/lists/,id=ubuntu:24.04/var/lib/apt/lists/ \
   mv /etc/apt/apt.conf.d/docker-clean /etc/apt/apt.conf.d/docker-gzip-indexes / \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     bash-completion \
