@@ -60,7 +60,7 @@ public:
 		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
 		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
 
-		ctxs.push_back(Context{&CI->getASTContext(), std::string{}});
+		ctxs.push_back(Context::FileLevel(CI->getASTContext()));
 	}
 
 	bool TraverseFunctionDecl(FunctionDecl* fdecl) {
@@ -70,7 +70,7 @@ public:
 			return true;
 		}
 
-		ctxs.push_back(Context{&fdecl->getASTContext(), fdecl->getName().str()});
+		ctxs.push_back(Context::FunctionLevel(fdecl->getASTContext(), *fdecl));
 		bool result = RecursiveASTVisitor::TraverseFunctionDecl(fdecl);
 		ctxs.pop_back();
 
@@ -169,13 +169,13 @@ public:
 	TraverseStmtFn(WhileStmt);
 
 	bool TraverseCompoundStmt(CompoundStmt* cstmt) {
-		if (!cstmt->body().empty() && std::next(cstmt->body().begin()) == cstmt->body().end()) {
+		if(!cstmt->body().empty() && std::next(cstmt->body().begin()) == cstmt->body().end()) {
 			auto* stmt = *cstmt->body().begin();
-			if (auto* ccstmt = llvm::dyn_cast<CompoundStmt>(stmt)) {
+			if(auto* ccstmt = llvm::dyn_cast<CompoundStmt>(stmt)) {
 				rewriter.RemoveText(ccstmt->getLBracLoc(), onlyRemoveOld);
 				rewriter.RemoveText(ccstmt->getRBracLoc(), onlyRemoveOld);
 				logln("Nested block removed at: ", DisplaySourceLoc(ctxs.back().astContext, ccstmt->getBeginLoc()));
-			
+
 				return true;
 			}
 		}
@@ -193,8 +193,20 @@ public:
 
 			// All other transforms shall not completely remove a statement (they can still convert it to a null statement),
 			// which enables us to ignore any labels here.
+			bool rewritten = false;
 			while(auto labelStmt = dyn_cast<LabelStmt>(stmt)) {
+				auto labelDecl = labelStmt->getDecl();
+				if(ctxs.back().usedLabels.count(labelDecl)) {
 				stmt = labelStmt->getSubStmt();
+				} else {
+					rewriter.RemoveText(labelStmt->getSourceRange());
+					rewriter.InsertTextBefore(labelStmt->getBeginLoc(), ctxs.back().source_text(labelStmt->getSubStmt()->getSourceRange()));
+					rewritten = true;
+					break;
+				}
+			}
+			if(rewritten) {
+				continue;
 			}
 
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {

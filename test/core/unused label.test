@@ -1,0 +1,13 @@
+-- Labels that are not potential targets can be safely removed.
+
+void foo() { }
+
+int main() {
+  foo: foo();
+}
+---
+void foo() { }
+
+int main() {
+  foo();
+}

@@ -3,6 +3,7 @@
 int main() {
 	int x = 0;
 	do {
+		goto stmt;
 		stmt: ++x;
 	} while(x);
 }
@@ -14,6 +15,7 @@ int main() {
 	_DoCond_main_1 = 1;
 	while(_DoCond_main_1) {
 		{
+			goto stmt;
 			stmt: ++x;
 		}
 		_DoCond_main_1 = x;
