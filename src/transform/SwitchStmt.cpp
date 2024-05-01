@@ -2,6 +2,7 @@
 
 #include "../check/Label.h"
 #include "../check/NakedBreak.h"
+#include "../check/NakedCaseOrDefault.h"
 #include "../check/NakedContinue.h"
 
 #include "../util/fmtlib_clang.h"
@@ -25,31 +26,6 @@ std::optional<transform::SwitchStmtConfig> transform::SwitchStmtConfig::parse(ra
 }
 
 namespace {
-	class NakedCaseOrDefault : public clang::RecursiveASTVisitor<NakedCaseOrDefault> {
-		clang::Stmt* caseOrDefaultStmt{};
-
-	public:
-		clang::Stmt* naked_case_or_default(clang::Stmt* stmt) {
-			caseOrDefaultStmt = nullptr;
-
-			TraverseStmt(stmt);
-
-			return caseOrDefaultStmt;
-		}
-
-		bool TraverseCaseStmt(clang::CaseStmt* caseStmt) {
-			caseOrDefaultStmt = caseStmt;
-			return false;
-		}
-
-		bool TraverseDefaultStmt(clang::DefaultStmt* defaultStmt) {
-			caseOrDefaultStmt = defaultStmt;
-			return false;
-		}
-
-		bool TraverseSwitchStmt(clang::SwitchStmt*) { return true; }
-	};
-
 	void printStmts(std::string& result, Context& ctx, std::vector<std::pair<clang::Stmt*, bool>> const& stmts,
 	                std::size_t startIndex) {
 		bool hasBreak = false;
@@ -141,8 +117,8 @@ StmtTransformResult transform::transformSwitchStmt(SwitchStmtConfig const& confi
 				}
 			}
 
-			if(NakedCaseOrDefault{}.naked_case_or_default(stmt)) {
-				throw "nest case or default statement";
+			if(checks::naked_case_or_default(*stmt)) {
+				throw "nested case or default statement";
 			}
 
 			stmts.emplace_back(stmt, checks::naked_break(*stmt));

@@ -2,6 +2,7 @@
 
 #include "../check/Label.h"
 #include "../check/NakedBreak.h"
+#include "../check/NakedCaseOrDefault.h"
 #include "../check/NakedContinue.h"
 
 #include "../util/fmtlib_llvm.h"
@@ -63,7 +64,7 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, Conte
 	}
 
 	if(!checks::naked_continue(body)) {
-		if(!checks::label(body) && !checks::naked_break(body)) {
+		if(!checks::label(body) && !checks::naked_case_or_default(body) && !checks::naked_break(body)) {
 			append_as_compound(result, ctx, body);
 			fmt::format_to(std::back_inserter(result), "\nwhile({}) ", ctx.source_text(cond->getSourceRange()));
 			append_as_compound(result, ctx, body);

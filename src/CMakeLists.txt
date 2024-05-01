@@ -4,6 +4,7 @@ add_executable(norman
   Context.cpp
   check/Label.cpp
   check/NakedBreak.cpp
+  check/NakedCaseOrDefault.cpp
   check/NakedContinue.cpp
   check/Reference.cpp
   transform/CallArg.cpp

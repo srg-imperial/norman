@@ -1,0 +1,27 @@
+-- Conditional statements that can be proven false must not be removed if the contain a label.
+
+void foo() { }
+
+int main() {
+  switch(0) {
+    if (0) {
+      case 0: foo();
+    }
+  }
+}
+---
+void foo() { }
+
+int main() {
+  switch(0) {
+    if (0) {
+      case 0: foo();
+    }
+  }
+}
+---
+{
+  "default": {
+    "SwitchStmt": false
+  }
+}

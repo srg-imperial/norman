@@ -1,6 +1,7 @@
 #include "IfStmt.h"
 
 #include "../check/Label.h"
+#include "../check/NakedCaseOrDefault.h"
 #include "../check/NullStmt.h"
 #include "../check/SimpleValue.h"
 
@@ -64,7 +65,7 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 	bool else_stmt_is_null_stmt = checks::null_stmt(else_stmt);
 
 	// If the condition is a constant, we can deconstruct the if statement.
-	if(!checks::label(ifStmt)) {
+	if(!checks::label(ifStmt) && !checks::naked_case_or_default(ifStmt)) {
 		if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 			std::string result;
 			if(cond->HasSideEffects(*ctx.astContext)) {
