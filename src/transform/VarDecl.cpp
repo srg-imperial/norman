@@ -23,6 +23,12 @@ std::optional<transform::VarDeclConfig> transform::VarDeclConfig::parse(rapidjso
 				return true;
 			}
 		}
+		if(member.name == "graceful") {
+			if(member.value.IsBool()) {
+				config.graceful = member.value.GetBool();
+				return true;
+			}
+		}
 		return false;
 	});
 }
@@ -34,7 +40,11 @@ namespace {
 			if(config.removeLocalConst) {
 				type.removeLocalConst();
 			} else {
-				throw "Split of const variable declaration required";
+				if(config.graceful) {
+					return {};
+				} else {
+					throw "Split of const variable declaration required";
+				}
 			}
 		}
 		clang::VarDecl* vd = clang::VarDecl::Create(*ctx.astContext, varDecl.getDeclContext(), clang::SourceLocation(),
@@ -56,7 +66,11 @@ StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, Con
 		} else if(varDecl.isLocalVarDecl()) {
 			if(!checks::reference(*init, varDecl)) {
 				if(llvm::isa<clang::InitListExpr>(init)) {
-					throw "unimplemented";
+					if(config.graceful) {
+						return {};
+					} else {
+						throw "unimplemented";
+					}
 				} else {
 					// SLIGHT SEMANTIC CHANGE if the variable is `const`
 					// TODO: only transform if there is a reason to

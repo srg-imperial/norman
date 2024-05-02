@@ -16,6 +16,8 @@ namespace transform {
 	struct VarDeclConfig : BaseConfig {
 		bool removeLocalConst = false; ///< potentially changes semantics, when enabled
 
+		bool graceful = false; ///< do not crash if vardecl splitting fails
+
 		static std::optional<VarDeclConfig> parse(rapidjson::Value const&);
 	};
 
