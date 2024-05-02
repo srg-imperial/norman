@@ -212,16 +212,6 @@ public:
 				continue;
 			}
 
-			// If the next statement is safe from removal, we can remove labelled null statements, as this will leave us with
-			// the effectively same target
-			if(checks::null_stmt(stmt)) {
-				auto next = std::next(iter);
-				if(next != end && !checks::null_stmt(*next)) {
-					rewriter.RemoveText(stmt->getSourceRange(), onlyRemoveOld);
-				}
-				continue;
-			}
-
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {
 				rewriter.RemoveText(parenExpr->getLParen(), onlyRemoveOld);
 				rewriter.RemoveText(parenExpr->getRParen(), onlyRemoveOld);
@@ -235,6 +225,12 @@ public:
 			for(std::size_t i = to_hoist.size(); i > 0;) {
 				--i;
 				rewriter.InsertTextBefore(stmt->getBeginLoc(), to_hoist[i]);
+			}
+			if (!to_hoist.empty() && stmt != *iter) {
+				// Some `clang::Stmt`s (e.g., `int x;`) are not actually "statements" in the sense that they are valid targets
+				// for labels and similar constructs.
+				// To make it a bit easier to use, we insert a null statement to serve as a target instead.
+				rewriter.InsertTextBefore(stmt->getBeginLoc(), ";\n");
 			}
 			to_hoist.clear();
 		}

@@ -13,7 +13,7 @@ void foo() { }
 int main() {
 	int x;
 	goto stmt;
-  stmt:
+  stmt: ;
 	foo();
 	x = 42;
 }

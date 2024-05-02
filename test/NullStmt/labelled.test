@@ -1,4 +1,4 @@
--- Null statements that are label targets can only be removed if they are not the last statement in a block.
+-- Null statements should not be removed if they are the target of a label.
 
 int main() {
 	goto A;
@@ -9,7 +9,7 @@ int main() {
 ---
 int main() {
 	goto A;
-	A:
+	A: ;
 	goto B;
 	B: ;
 }

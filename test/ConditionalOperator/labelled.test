@@ -1,0 +1,21 @@
+-- The label must be placed before any part of the destructured conditional expression
+
+int main() {
+  int x = 0;
+  goto stmt;
+  stmt: x = x ? 1 : 2;
+}
+---
+int main() {
+	int x;
+	x = 0;
+  goto stmt;
+  stmt: ;
+	int _CExpr_main_1;
+	if(x) {
+		_CExpr_main_1 = 1;
+	} else {
+		_CExpr_main_1 = 2;
+	}
+	x = _CExpr_main_1;
+}

@@ -1,4 +1,4 @@
--- Empty blocks that are label targets can only be removed if they are not the last statement in the surrounding block.
+-- Do not remove empty blocks that are targets of labels.
 
 int main() {
 	goto A;
@@ -9,7 +9,7 @@ int main() {
 ---
 int main() {
 	goto A;
-	A:
+	A: { }
 	goto B;
 	B: { }
 }

@@ -1,0 +1,11 @@
+-- Conditional operators whose condition can be proven true should just be executed. Their else expression should be
+-- removed.
+
+int main() {
+  int x = 1 ? 2 : 3;
+}
+---
+int main() {
+  int x;
+  x = 2;
+}
