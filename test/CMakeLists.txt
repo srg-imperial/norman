@@ -22,12 +22,13 @@ foreach(f IN ITEMS ${INPUT_C_FILES})
 endforeach()
 
 foreach(test IN ITEMS ${SHORT_TESTS} ${DIR_TESTS})
+  cmake_path(RELATIVE_PATH test OUTPUT_VARIABLE test_name)
   add_test(
-    NAME ${test}
+    NAME ${test_name}
     COMMAND ${CMAKE_SOURCE_DIR}/test/runner.py
       --norman $<TARGET_FILE:norman>
       --clang-format ${ClangFormat}
       ${test}
   )
-  set_tests_properties(${test} PROPERTIES FIXTURES_REQUIRED test_fixture)
+  set_tests_properties(${test_name} PROPERTIES FIXTURES_REQUIRED test_fixture)
 endforeach()
