@@ -1,0 +1,6 @@
+-- Empty blocks should be removed. (This variant of the test does not create a block that is the only child of another
+-- block.)
+
+int main() { int x; { } }
+---
+int main() { int x; }

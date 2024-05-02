@@ -1,4 +1,4 @@
--- Empty blocks should be removed.
+-- Empty blocks should be removed. (This variant of the test creates a block that is the only child of another block.)
 
 int main() { { } }
 ---
