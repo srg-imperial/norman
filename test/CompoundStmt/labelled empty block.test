@@ -1,0 +1,15 @@
+-- Empty blocks that are label targets can only be removed if they are not the last statement in the surrounding block.
+
+int main() {
+	goto A;
+	A: { }
+	goto B;
+	B: { }
+}
+---
+int main() {
+	goto A;
+	A:
+	goto B;
+	B: { }
+}
