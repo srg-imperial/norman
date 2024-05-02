@@ -38,6 +38,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -218,6 +219,7 @@ public:
 				if(next != end && !checks::null_stmt(*next)) {
 					rewriter.RemoveText(stmt->getSourceRange());
 				}
+				continue;
 			}
 
 			while(auto parenExpr = dyn_cast<ParenExpr>(stmt)) {
@@ -330,6 +332,10 @@ int main(int argc, const char** argv) {
 	static llvm::cl::opt<std::string> configPath(
 	  "config", llvm::cl::desc("Path to the file containing a function config"), llvm::cl::cat(NormanOptionCategory));
 
+	static llvm::cl::opt<std::uint64_t> maxIterations("n", llvm::cl::desc("Maximum number of iterations to run"),
+	                                                  llvm::cl::init((std::numeric_limits<std::uint64_t>::max)()),
+	                                                  llvm::cl::cat(NormanOptionCategory));
+
 	llvm::cl::HideUnrelatedOptions(NormanOptionCategory);
 
 #if LLVM_VERSION_MAJOR > 12
@@ -352,9 +358,9 @@ int main(int argc, const char** argv) {
 		}
 	}
 
-	bool rewritten;
+	bool rewritten = true;
 	std::uint64_t count = 0;
-	do {
+	while(rewritten && count < maxIterations.getValue()) {
 		clang::tooling::ClangTool Tool{op->getCompilations(), op->getSourcePathList()[0]};
 		// disable printing warnings
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
@@ -365,6 +371,6 @@ int main(int argc, const char** argv) {
 		}
 		++count;
 		logln(rewritten ? "File was rewritten" : "No change");
-	} while(rewritten);
+	}
 	llvm::outs() << "Norman ran " << count << " times to normalize your source code.\n";
 }
