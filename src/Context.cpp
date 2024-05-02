@@ -10,18 +10,18 @@ namespace {
 	struct UsedLabels : clang::RecursiveASTVisitor<UsedLabels> {
 		std::set<clang::LabelDecl*> usedLabelDecls{};
 
-    bool TraverseGotoStmt(clang::GotoStmt* gotoStmt) {
-      usedLabelDecls.insert(gotoStmt->getLabel());
+		bool TraverseGotoStmt(clang::GotoStmt* gotoStmt) {
+			usedLabelDecls.insert(gotoStmt->getLabel());
 
-      return true;
-    }
+			return true;
+		}
 	};
 } // namespace
 
 Context Context::FileLevel(clang::ASTContext& astContext) noexcept { return {&astContext, {}, {}}; }
 Context Context::FunctionLevel(clang::ASTContext& astContext, clang::FunctionDecl& fdecl) {
-  UsedLabels usedLabels;
-  usedLabels.TraverseFunctionDecl(&fdecl);
+	UsedLabels usedLabels;
+	usedLabels.TraverseFunctionDecl(&fdecl);
 	return {&astContext, fdecl.getName().str(), std::move(usedLabels.usedLabelDecls)};
 }
 

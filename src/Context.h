@@ -29,4 +29,7 @@ public:
 
 	std::string uid(std::string_view prefix) const;
 	llvm::StringRef source_text(clang::SourceRange source_range) const;
+	llvm::StringRef source_text(clang::SourceLocation start, clang::SourceLocation end) const {
+		return source_text(clang::SourceRange{start, end});
+	}
 };

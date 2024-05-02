@@ -1,0 +1,12 @@
+-- Statement expressions can have void type, which requires a slightly different treatment.
+
+int main() {
+	int x = (({
+		;
+	}), 42);
+}
+---
+int main() {
+	int x;
+	x = 42;
+}

@@ -1,0 +1,24 @@
+-- Statement expressions should be transformed into an appropriate block.
+
+int main() {
+	if(({
+		goto stmt;
+		stmt: 42;
+	})) {
+	} else {
+		return 1;
+	}
+}
+---
+int main() {
+	int _IfCond_main_1;
+	int _StmtExpr_main_1;
+	{
+		goto stmt;
+		stmt: _StmtExpr_main_1 = 42;
+	}
+	_IfCond_main_1 = (!_StmtExpr_main_1);
+	if(_IfCond_main_1) {
+		return 1;
+	}
+}

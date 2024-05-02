@@ -44,7 +44,15 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 		out = fmt::format_to(out, "{};\n", ctx.source_text((*S)->getSourceRange()));
 	}
 
-	out = fmt::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(Stmts->body_back()->getSourceRange()));
+	clang::Stmt* finalStmt = Stmts->body_back();
+	// it is impossible to jump into a statement expression (which makes naked case/default statements impossible here),
+	// but the final statement may be the target of a goto from within the statement expression, for example:
+	// `({goto stmt; stmt: 42;})`
+	while(auto* labelStmt = llvm::dyn_cast<clang::LabelStmt>(finalStmt)) {
+			out = fmt::format_to(out, "{}:", ctx.source_text(labelStmt->getDecl()->getSourceRange()));
+			finalStmt = labelStmt->getSubStmt();
+	}
+	out = fmt::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(finalStmt->getSourceRange()));
 	// we need to protect against accidental token concatination, as we now return a valid identifier where there were
 	// parentheses previously
 	return {fmt::format(" {} ", var_name), std::move(to_hoist)};
