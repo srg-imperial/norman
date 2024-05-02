@@ -201,7 +201,7 @@ public:
 				if(ctxs.back().usedLabels.count(labelDecl)) {
 					stmt = labelStmt->getSubStmt();
 				} else {
-					rewriter.RemoveText(labelStmt->getSourceRange());
+					rewriter.RemoveText(labelStmt->getSourceRange(), onlyRemoveOld);
 					rewriter.InsertTextBefore(labelStmt->getBeginLoc(),
 					                          ctxs.back().source_text(labelStmt->getSubStmt()->getSourceRange()));
 					rewritten = true;
@@ -217,7 +217,7 @@ public:
 			if(checks::null_stmt(stmt)) {
 				auto next = std::next(iter);
 				if(next != end && !checks::null_stmt(*next)) {
-					rewriter.RemoveText(stmt->getSourceRange());
+					rewriter.RemoveText(stmt->getSourceRange(), onlyRemoveOld);
 				}
 				continue;
 			}
