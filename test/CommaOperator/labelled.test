@@ -1,0 +1,19 @@
+-- A labelled comma operator must be destructured in such a way that the label still points at the right location.
+
+void foo() { }
+
+int main() {
+  int x;
+  goto stmt;
+  stmt: x = (foo(), 42);
+}
+---
+void foo() { }
+
+int main() {
+	int x;
+	goto stmt;
+  stmt:
+	foo();
+	x = 42;
+}

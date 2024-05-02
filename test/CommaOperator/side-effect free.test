@@ -1,0 +1,14 @@
+-- If the first subexpression of a comma operator is definitely side-effect free, it can be removed.
+
+void foo() { }
+
+int main() {
+  int x = (1, 2);
+}
+---
+void foo() { }
+
+int main() {
+	int x;
+	x = 2;
+}
