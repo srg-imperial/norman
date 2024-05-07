@@ -2,14 +2,14 @@
 
 void foo() { }
 
-int main() { 
-  {
-      foo();
-  }
+int main() {
+	{
+			foo();
+	}
 }
 ---
 void foo() { }
 
 int main() {
-  foo();
+	foo();
 }
