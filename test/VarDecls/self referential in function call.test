@@ -1,0 +1,17 @@
+-- One interesting case of variable declarations are those which immediately reference the newly declared variable
+-- inside the initializer. It must be processed in the right order with other hoisting operations.
+
+int foo(int* n) { return 0; }
+
+int main(){
+	int v = foo(&v);
+}
+---
+int foo(int* n) { return 0; }
+
+int main(){
+	int v;
+	int *_CallArg_main_1;
+	_CallArg_main_1 = (&v);
+	v = (foo(_CallArg_main_1));
+}

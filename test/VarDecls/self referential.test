@@ -1,0 +1,11 @@
+-- One interesting case of variable declarations are those which immediately reference the newly declared variable
+-- inside the initializer.
+
+int main(){
+	void* p = &p;
+}
+---
+int main(){
+	void* p;
+	p = (&p);
+}

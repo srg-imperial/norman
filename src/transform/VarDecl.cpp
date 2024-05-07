@@ -61,21 +61,17 @@ StmtTransformResult transform::transformVarDecl(VarDeclConfig const& config, Con
 	}
 
 	if(clang::Expr* init = varDecl.getInit()) {
-		if(varDecl.isFileVarDecl() || varDecl.isStaticLocal()) {
-			// in C file vars and static locals have to be constant initialized
-		} else if(varDecl.isLocalVarDecl()) {
-			if(!checks::reference(*init, varDecl)) {
-				if(llvm::isa<clang::InitListExpr>(init)) {
-					if(config.graceful) {
-						return {};
-					} else {
-						throw "unimplemented";
-					}
+		if(varDecl.isLocalVarDecl() && !varDecl.isStaticLocal()) {
+			if(llvm::isa<clang::InitListExpr>(init)) {
+				if(config.graceful) {
+					return {};
 				} else {
-					// SLIGHT SEMANTIC CHANGE if the variable is `const`
-					// TODO: only transform if there is a reason to
-					return {split(config, ctx, varDecl)};
+					throw "unimplemented";
 				}
+			} else {
+				// SLIGHT SEMANTIC CHANGE if the variable is `const`
+				// TODO: only transform if there is a reason to
+				return {split(config, ctx, varDecl)};
 			}
 		}
 	}
