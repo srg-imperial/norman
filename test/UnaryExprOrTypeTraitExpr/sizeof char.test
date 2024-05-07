@@ -1,0 +1,15 @@
+-- `sizeof char` should always be `1`.
+
+int main(){
+	sizeof(char);
+}
+---
+int main(){
+	1;
+}
+---
+{
+	"default": {
+		"UnaryExprOrTypeTraitExpr": true
+	}
+}

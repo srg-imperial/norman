@@ -13,6 +13,7 @@
 #include "transform/StmtExpr.h"
 #include "transform/StringLiteral.h"
 #include "transform/SwitchStmt.h"
+#include "transform/UnaryExprOrTypeTraitExpr.h"
 #include "transform/VarDecl.h"
 #include "transform/WhileStmt.h"
 
@@ -42,6 +43,7 @@ public:
 		transform::StmtExprConfig configStmtExpr;
 		transform::StringLiteralConfig configStringLiteral;
 		transform::SwitchStmtConfig configSwitchStmt;
+		transform::UnaryExprOrTypeTraitExprConfig configUnaryExprOrTypeTraitExpr;
 		transform::VarDeclConfig configVarDecl;
 		transform::WhileStmtConfig configWhileStmt;
 	};

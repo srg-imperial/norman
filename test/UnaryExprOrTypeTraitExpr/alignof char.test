@@ -1,0 +1,15 @@
+-- `_Alignof char` should always be `1`.
+
+int main(){
+	_Alignof(char);
+}
+---
+int main(){
+	1;
+}
+---
+{
+	"default": {
+		"UnaryExprOrTypeTraitExpr": true
+	}
+}

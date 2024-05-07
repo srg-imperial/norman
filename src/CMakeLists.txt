@@ -20,6 +20,7 @@ add_executable(norman
   transform/StmtExpr.cpp
   transform/StringLiteral.cpp
   transform/SwitchStmt.cpp
+  transform/UnaryExprOrTypeTraitExpr.cpp
   transform/VarDecl.cpp
   transform/WhileStmt.cpp
 )

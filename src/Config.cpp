@@ -107,6 +107,7 @@ namespace {
 		CONFIG_CASE(StmtExpr)
 		CONFIG_CASE(StringLiteral)
 		CONFIG_CASE(SwitchStmt)
+		CONFIG_CASE(UnaryExprOrTypeTraitExpr)
 		CONFIG_CASE(VarDecl)
 		CONFIG_CASE(WhileStmt)
 

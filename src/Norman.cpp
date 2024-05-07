@@ -13,6 +13,7 @@
 #include "transform/StmtExpr.h"
 #include "transform/StringLiteral.h"
 #include "transform/SwitchStmt.h"
+#include "transform/UnaryExprOrTypeTraitExpr.h"
 #include "transform/VarDecl.h"
 #include "transform/WhileStmt.h"
 #include "util/Log.h"
@@ -160,6 +161,7 @@ public:
 	TraverseExprFn(ParenExpr, ParenExpr);
 	TraverseExprFn(StmtExpr, StmtExpr);
 	TraverseExprFn(StringLiteral, StringLiteral);
+	TraverseExprFn(UnaryExprOrTypeTraitExpr, UnaryExprOrTypeTraitExpr);
 
 	TraverseStmtFn(DoStmt);
 	TraverseStmtFn(ForStmt);
