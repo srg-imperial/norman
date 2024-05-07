@@ -71,7 +71,9 @@ public:
 		auto ctx = Context::FileLevel(tuDecl->getASTContext());
 
 		for(auto* decl : tuDecl->decls()) {
-			if(auto* recordDecl = llvm::dyn_cast<RecordDecl>(decl)) {
+			if(decl->isImplicit()) {
+				// do nothing
+			} else if(auto* recordDecl = llvm::dyn_cast<RecordDecl>(decl)) {
 				if(recordDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
@@ -423,8 +425,8 @@ int main(int argc, const char** argv) {
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
 
 		bool rewritten;
-		using RewriteDeclAction = NormanFrontendAction<NormanASTConsumer<TUFixupVisitor>>;
-		int result = Tool.run(&(*newFrontendActionDataFactory<RewriteDeclAction>(&rewritten, &config)));
+		using TUFixupAction = NormanFrontendAction<NormanASTConsumer<TUFixupVisitor>>;
+		int result = Tool.run(&(*newFrontendActionDataFactory<TUFixupAction>(&rewritten, &config)));
 		if(result != EXIT_SUCCESS) {
 			return result;
 		}
