@@ -12,13 +12,13 @@ int main() {
 	{
 		_VarDecl_i_main_1 = 0;
 		_Bool _WhileCond_main_1;
-		_WhileCond_main_1 = (_VarDecl_i_main_1 < 64);
+		_WhileCond_main_1 = (_VarDecl_i_main_1 < 8);
 		while(_WhileCond_main_1) {
 			{
 				{ ((char*)&x)[_VarDecl_i_main_1] = _VarDecl_p_main_1[_VarDecl_i_main_1]; }
 				++_VarDecl_i_main_1;
 			}
-			_WhileCond_main_1 = (_VarDecl_i_main_1 < 64);
+			_WhileCond_main_1 = (_VarDecl_i_main_1 < 8);
 		}
 	}
 }

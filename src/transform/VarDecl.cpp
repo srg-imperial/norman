@@ -48,13 +48,15 @@ namespace {
 				std::string indexName = ctx.uid("_VarDecl_i");
 				std::string ptrName = ctx.uid("_VarDecl_p");
 
+				auto typeSizeInBits = ctx.astContext->getTypeSize(type.getTypePtr());
+				assert(typeSizeInBits % 8 == 0);
+
 				return fmt::format("{};\n{} {};char {}* {}; {} = (char {}*)&({}){};\nfor({} = 0; {} < {}; ++{}) {{\n((char "
 				                   "{}*)&{})[{}] = {}[{}];\n}};",
 				                   *vd, static_cast<clang::QualType>(ctx.astContext->getSizeType()).getAsString(), indexName,
 				                   volatileString, ptrName, ptrName, volatileString, type.getAsString(),
-				                   ctx.source_text(init->getSourceRange()), indexName, indexName,
-				                   ctx.astContext->getTypeSize(type.getTypePtr()), indexName, volatileString, varDecl.getName(),
-				                   indexName, ptrName, indexName);
+				                   ctx.source_text(init->getSourceRange()), indexName, indexName, typeSizeInBits / 8, indexName,
+				                   volatileString, varDecl.getName(), indexName, ptrName, indexName);
 			} else {
 				return fmt::format("{};\n{} = ({}){};", *vd, varDecl.getName(), type.getAsString(),
 				                   ctx.source_text(init->getSourceRange()));
