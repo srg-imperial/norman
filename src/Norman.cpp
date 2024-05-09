@@ -145,8 +145,6 @@ public:
 		return result;
 	}
 
-	bool TraverseEnumDecl(EnumDecl*) { return true; }
-
 	bool TraverseCallExpr(CallExpr* cexpr) {
 		if(!TraverseStmt(cexpr->getCallee())) {
 			return false;
