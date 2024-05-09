@@ -1,2 +1,5 @@
 /build
 .vscode
+
+/compile_flags.txt
+/test*.c
