@@ -13,13 +13,13 @@ int main() {
 	int x;
 	x = 0;
 	switch(0) {
-		_Bool _DoCond_main_1;
-		_DoCond_main_1 = 1;
-		while(_DoCond_main_1) {
+		_Bool DoCond_main_1;
+		DoCond_main_1 = 1;
+		while(DoCond_main_1) {
 			{
 				case 0: ++x;
 			}
-			_DoCond_main_1 = x;
+			DoCond_main_1 = x;
 		}
 	}
 }

@@ -4,7 +4,7 @@ typedef struct {
   int x;
 } A;
 ---
-struct _Decl__1 {
+struct Decl__1 {
 	int x;
 };
-typedef struct _Decl__1 A;
+typedef struct Decl__1 A;

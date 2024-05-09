@@ -9,9 +9,9 @@ int main() {
 ---
 int main() {
 	int pos;
-  int _StmtExpr_main_1;
+  int StmtExpr_main_1;
   {
-    _StmtExpr_main_1 = 42;
+    StmtExpr_main_1 = 42;
   }
-  pos = ((int)__extension__ _StmtExpr_main_1);
+  pos = ((int)__extension__ StmtExpr_main_1);
 }

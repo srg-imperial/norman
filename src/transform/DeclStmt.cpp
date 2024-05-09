@@ -31,13 +31,13 @@ StmtTransformResult transform::transformDeclStmt(DeclStmtConfig const& config, C
 		for(auto decl : declStmt.decls()) {
 			if(auto* recordDecl = llvm::dyn_cast<clang::RecordDecl>(decl)) {
 				if(recordDecl->getName().empty()) {
-					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
 				}
 				fmt::format_to(std::back_inserter(result), "{};", *recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<clang::EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
-					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
 				}
 				fmt::format_to(std::back_inserter(result), "{};", *enumDecl);

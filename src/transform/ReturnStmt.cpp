@@ -40,7 +40,7 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 		return {fmt::format("return {}", ctx.source_text(retVal->getSourceRange()))};
 	}
 
-	std::string var_name = ctx.uid("_Return");
+	std::string var_name = ctx.uid("Return");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), returnStmt.getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);

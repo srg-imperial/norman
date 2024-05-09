@@ -118,7 +118,7 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 		append_else(result, config, ctx, else_stmt);
 		return {std::move(result)};
 	} else {
-		std::string var_name = ctx.uid("_IfCond");
+		std::string var_name = ctx.uid("IfCond");
 		clang::VarDecl* vd = clang::VarDecl::Create(
 		  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 		  &ctx.astContext->Idents.get(var_name), ifStmt.getCond()->getType(), nullptr, clang::StorageClass::SC_None);

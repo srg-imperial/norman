@@ -28,7 +28,7 @@ ExprTransformResult transform::transformCallArg(CallArgConfig const& config, Con
 		return {};
 	}
 
-	std::string var_name = ctx.uid("_CallArg");
+	std::string var_name = ctx.uid("CallArg");
 
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),

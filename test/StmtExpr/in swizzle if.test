@@ -11,15 +11,15 @@ int main() {
 }
 ---
 int main() {
-	int _IfCond_main_1;
-	int _StmtExpr_main_1;
+	int IfCond_main_1;
+	int StmtExpr_main_1;
 	{
     int x;
     x = 42;
-    _StmtExpr_main_1 = x;
+    StmtExpr_main_1 = x;
   }
-	_IfCond_main_1 = (!_StmtExpr_main_1);
-	if(_IfCond_main_1) {
+	IfCond_main_1 = (!StmtExpr_main_1);
+	if(IfCond_main_1) {
 		return 1;
 	}
 }

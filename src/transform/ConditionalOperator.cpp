@@ -40,7 +40,7 @@ ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorC
 		}
 	}
 
-	std::string var_name = ctx.uid("_CExpr");
+	std::string var_name = ctx.uid("CExpr");
 
 	auto const expr_type = cop.getType();
 	if(expr_type->isVoidType()) {

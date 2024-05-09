@@ -45,8 +45,8 @@ namespace {
 		if(auto init = varDecl.getInit(); llvm::isa<clang::InitListExpr>(init)) {
 			if(type.getTypePtr()->isArrayType()) {
 				char const* volatileString = type.isVolatileQualified() ? "volatile" : "";
-				std::string indexName = ctx.uid("_VarDecl_i");
-				std::string ptrName = ctx.uid("_VarDecl_p");
+				std::string indexName = ctx.uid("VarDecl_i");
+				std::string ptrName = ctx.uid("VarDecl_p");
 
 				auto typeSizeInBits = ctx.astContext->getTypeSize(type.getTypePtr());
 				assert(typeSizeInBits % 8 == 0);

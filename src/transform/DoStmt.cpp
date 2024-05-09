@@ -70,7 +70,7 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, Conte
 			append_as_compound(result, ctx, body);
 			return {std::move(result)};
 		} else {
-			auto var_name = ctx.uid("_DoCond");
+			auto var_name = ctx.uid("DoCond");
 
 			fmt::format_to(std::back_inserter(result), "_Bool {} = 1;\nwhile({}) {{\n", var_name, var_name);
 
@@ -82,7 +82,7 @@ StmtTransformResult transform::transformDoStmt(DoStmtConfig const& config, Conte
 		}
 	}
 
-	auto var_name = ctx.uid("_DoStmt");
+	auto var_name = ctx.uid("DoStmt");
 
 	fmt::format_to(std::back_inserter(result), "_Bool {} = 1;\nwhile({} || ({})) {{\n{} = 0;\n", var_name, var_name,
 	               ctx.source_text(cond->getSourceRange()), var_name);

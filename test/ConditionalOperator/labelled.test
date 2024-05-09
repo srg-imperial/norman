@@ -11,11 +11,11 @@ int main() {
 	x = 0;
   goto stmt;
   stmt: ;
-	int _CExpr_main_1;
+	int CExpr_main_1;
 	if(x) {
-		_CExpr_main_1 = 1;
+		CExpr_main_1 = 1;
 	} else {
-		_CExpr_main_1 = 2;
+		CExpr_main_1 = 2;
 	}
-	x = _CExpr_main_1;
+	x = CExpr_main_1;
 }

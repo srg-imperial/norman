@@ -34,7 +34,7 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 	std::string to_hoist;
 	auto out = std::back_inserter(to_hoist);
 
-	std::string var_name = ctx.uid("_StmtExpr");
+	std::string var_name = ctx.uid("StmtExpr");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), stexpr_type, nullptr, clang::StorageClass::SC_None);

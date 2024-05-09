@@ -3,8 +3,8 @@
 void foo() { }
 
 int main() {
-  int _IfCond_main_1 = 0;
-  if (_IfCond_main_1) {
+  int IfCond_main_1 = 0;
+  if (IfCond_main_1) {
   } else {
     foo();
   }
@@ -13,11 +13,11 @@ int main() {
 void foo() { }
 
 int main() {
-  int _IfCond_main_1;
-  _IfCond_main_1 = 0;
-  int _IfCond_main_2;
-  _IfCond_main_2 = (!_IfCond_main_1);
-  if (_IfCond_main_2) {
+  int IfCond_main_1;
+  IfCond_main_1 = 0;
+  int IfCond_main_2;
+  IfCond_main_2 = (!IfCond_main_1);
+  if (IfCond_main_2) {
     foo();
   }
 }

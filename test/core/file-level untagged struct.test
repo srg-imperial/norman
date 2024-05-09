@@ -8,12 +8,12 @@ struct {
   int y;
 } b = {1};
 ---
-struct _Decl__1 {
+struct Decl__1 {
 	int x;
 };
-struct _Decl__1 a;
+struct Decl__1 a;
 
-struct _Decl__2 {
+struct Decl__2 {
 	int y;
 };
-struct _Decl__2 b = {1};
+struct Decl__2 b = {1};

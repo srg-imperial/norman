@@ -80,7 +80,7 @@ StmtTransformResult transform::transformSwitchStmt(SwitchStmtConfig const& confi
 
 	clang::Expr* cond = switchStmt.getCond();
 
-	auto var_name = ctx.uid("_Switch");
+	auto var_name = ctx.uid("Switch");
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), cond->getType(), nullptr, clang::StorageClass::SC_None);

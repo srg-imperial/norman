@@ -11,7 +11,7 @@ int foo(int* n) { return 0; }
 
 int main(){
 	int v;
-	int *_CallArg_main_1;
-	_CallArg_main_1 = (&v);
-	v = (foo(_CallArg_main_1));
+	int *CallArg_main_1;
+	CallArg_main_1 = (&v);
+	v = (foo(CallArg_main_1));
 }

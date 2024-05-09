@@ -81,13 +81,13 @@ public:
 				// do nothing
 			} else if(auto* recordDecl = llvm::dyn_cast<RecordDecl>(decl)) {
 				if(recordDecl->getName().empty()) {
-					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
 				}
 				reinsertDecl(ctx, recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
-					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
+					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
 				}
 				reinsertDecl(ctx, enumDecl);

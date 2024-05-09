@@ -66,7 +66,7 @@ StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config,
 		append_as_compound(result, ctx, *body);
 		return {std::move(result)};
 	} else if(!checks::naked_continue(*body)) {
-		std::string var_name = ctx.uid("_WhileCond");
+		std::string var_name = ctx.uid("WhileCond");
 		auto cond_str = ctx.source_text(cond->getSourceRange());
 
 		auto result = fmt::format("_Bool {} = ({});\nwhile({}) {{\n", var_name, cond_str, var_name);

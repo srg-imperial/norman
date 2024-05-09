@@ -49,7 +49,7 @@ ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& con
 		}
 	}
 
-	std::string var_name = ctx.uid("_LOr");
+	std::string var_name = ctx.uid("LOr");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 		if(rhs_val) {

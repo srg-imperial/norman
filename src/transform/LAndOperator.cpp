@@ -51,7 +51,7 @@ ExprTransformResult transform::transformLAndOperator(LAndOperatorConfig const& c
 		}
 	}
 
-	std::string var_name = ctx.uid("_LAnd");
+	std::string var_name = ctx.uid("LAnd");
 
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 		if(rhs_val) {
