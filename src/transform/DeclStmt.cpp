@@ -33,22 +33,16 @@ StmtTransformResult transform::transformDeclStmt(DeclStmtConfig const& config, C
 				if(recordDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
-					fmt::format_to(std::back_inserter(result), "{};", *recordDecl);
-				} else {
-					fmt::format_to(std::back_inserter(result), "{};", ctx.source_text(recordDecl->getSourceRange()));
 				}
+				fmt::format_to(std::back_inserter(result), "{};", *recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<clang::EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
-					fmt::format_to(std::back_inserter(result), "{};", *enumDecl);
-				} else {
-					fmt::format_to(std::back_inserter(result), "{};", ctx.source_text(enumDecl->getSourceRange()));
 				}
-			} else if(auto* varDecl = llvm::dyn_cast<clang::VarDecl>(decl)) {
-				fmt::format_to(std::back_inserter(result), "{};", *varDecl);
+				fmt::format_to(std::back_inserter(result), "{};", *enumDecl);
 			} else if(!llvm::isa<clang::EmptyDecl>(decl)) {
-				fmt::format_to(std::back_inserter(result), "{};", ctx.source_text(decl->getSourceRange()));
+				fmt::format_to(std::back_inserter(result), "{};", *decl);
 			}
 		}
 		return result;

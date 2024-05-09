@@ -17,7 +17,9 @@ int main() {
 }
 ---
 void foo() { }
+
 void bar() { }
+
 void baz() { }
 
 int main() {

@@ -46,8 +46,8 @@ def parse_test(test):
       config = None
 
   return (
-    "".join(input).strip(),
-    "".join(expected).strip(),
+    "".join(input).strip() + "\n",
+    "".join(expected).strip() + "\n",
     None if config is None else "".join(config).strip(),
   )
 

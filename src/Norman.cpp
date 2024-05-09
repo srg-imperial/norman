@@ -51,20 +51,26 @@ using namespace clang;
 
 class TUFixupVisitor : public RecursiveASTVisitor<TUFixupVisitor> {
 	Rewriter& rewriter;
-	Rewriter::RewriteOptions onlyRemoveOld;
+	std::optional<clang::SourceRange> lastRange;
+	std::string lastText;
 
 public:
 	explicit TUFixupVisitor(CompilerInstance*, Config const&, Rewriter& rewriter)
-	  : rewriter(rewriter) {
-		onlyRemoveOld.IncludeInsertsAtBeginOfRange = false;
-		onlyRemoveOld.IncludeInsertsAtEndOfRange = false;
-	}
+	  : rewriter(rewriter) { }
 
 	void reinsertDecl(Context const& ctx, Decl* decl) {
-		auto text = ctx.source_text(decl->getSourceRange());
-		rewriter.RemoveText(decl->getSourceRange(), onlyRemoveOld);
-		rewriter.InsertTextAfter(decl->getBeginLoc(), text);
-		rewriter.InsertTextAfter(decl->getBeginLoc(), ";");
+		assert(decl->getSourceRange().isValid() && "any explicit decl should have a valid SourceRange");
+		if(lastRange.has_value() && decl->getSourceRange().fullyContains(*lastRange)) {
+			lastRange = decl->getSourceRange();
+			fmt::format_to(std::back_inserter(lastText), ";\n{}", *decl);
+		} else {
+			if(lastRange.has_value()) {
+				rewriter.RemoveText(*lastRange);
+				rewriter.InsertTextAfter(lastRange->getBegin(), lastText);
+			}
+			lastRange = decl->getSourceRange();
+			lastText = fmt::format("{}", *decl);
+		}
 	}
 
 	bool TraverseTranslationUnitDecl(TranslationUnitDecl* tuDecl) {
@@ -77,26 +83,22 @@ public:
 				if(recordDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
-					rewriter.RemoveText(recordDecl->getSourceRange(), onlyRemoveOld);
-					rewriter.InsertTextAfter(recordDecl->getBeginLoc(), fmt::format("{};", *recordDecl));
-				} else {
-					reinsertDecl(ctx, decl);
 				}
+				reinsertDecl(ctx, recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("_Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
-					rewriter.RemoveText(enumDecl->getSourceRange(), onlyRemoveOld);
-					rewriter.InsertTextAfter(enumDecl->getBeginLoc(), fmt::format("{};", *enumDecl));
-				} else {
-					reinsertDecl(ctx, decl);
 				}
-			} else if(auto* varDecl = llvm::dyn_cast<VarDecl>(decl)) {
-				rewriter.RemoveText(varDecl->getSourceRange(), onlyRemoveOld);
-				rewriter.InsertTextAfter(varDecl->getBeginLoc(), fmt::format("{};", *varDecl));
+				reinsertDecl(ctx, enumDecl);
 			} else {
 				reinsertDecl(ctx, decl);
 			}
+		}
+
+		if(lastRange.has_value()) {
+			rewriter.RemoveText(*lastRange);
+			rewriter.InsertTextAfter(lastRange->getBegin(), lastText);
 		}
 
 		return true;

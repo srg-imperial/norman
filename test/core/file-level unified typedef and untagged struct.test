@@ -1,10 +1,10 @@
 -- The well-known typedef-struct trick.
 
-typedef struct A {
+typedef struct {
   int x;
 } A;
 ---
-struct A {
+struct _Decl__1 {
 	int x;
 };
-typedef struct A A;
+typedef struct _Decl__1 A;
