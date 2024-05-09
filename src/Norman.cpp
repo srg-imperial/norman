@@ -50,28 +50,13 @@
 using namespace clang;
 
 class TUFixupVisitor : public RecursiveASTVisitor<TUFixupVisitor> {
-	Rewriter& rewriter;
-	std::optional<clang::SourceRange> lastRange;
-	std::string lastText;
+	std::string& result;
 
 public:
-	explicit TUFixupVisitor(CompilerInstance*, Config const&, Rewriter& rewriter)
-	  : rewriter(rewriter) { }
+	explicit TUFixupVisitor(CompilerInstance*, Config const&, std::string& result)
+	  : result(result) { }
 
-	void reinsertDecl(Context const& ctx, Decl* decl) {
-		assert(decl->getSourceRange().isValid() && "any explicit decl should have a valid SourceRange");
-		if(lastRange.has_value() && decl->getSourceRange().fullyContains(*lastRange)) {
-			lastRange = decl->getSourceRange();
-			fmt::format_to(std::back_inserter(lastText), ";\n{}", *decl);
-		} else {
-			if(lastRange.has_value()) {
-				rewriter.RemoveText(*lastRange);
-				rewriter.InsertTextAfter(lastRange->getBegin(), lastText);
-			}
-			lastRange = decl->getSourceRange();
-			lastText = fmt::format("{}", *decl);
-		}
-	}
+	void writeDecl(Context const& ctx, Decl* decl) { fmt::format_to(std::back_inserter(result), "{};\n", *decl); }
 
 	bool TraverseTranslationUnitDecl(TranslationUnitDecl* tuDecl) {
 		auto ctx = Context::FileLevel(tuDecl->getASTContext());
@@ -84,21 +69,16 @@ public:
 					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
 				}
-				reinsertDecl(ctx, recordDecl);
+				writeDecl(ctx, recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
 				}
-				reinsertDecl(ctx, enumDecl);
+				writeDecl(ctx, enumDecl);
 			} else {
-				reinsertDecl(ctx, decl);
+				writeDecl(ctx, decl);
 			}
-		}
-
-		if(lastRange.has_value()) {
-			rewriter.RemoveText(*lastRange);
-			rewriter.InsertTextAfter(lastRange->getBegin(), lastText);
 		}
 
 		return true;
@@ -312,23 +292,67 @@ public:
 	}
 };
 
-template <typename Visitor> class NormanASTConsumer final : public ASTConsumer {
+template <typename Visitor> class SimpleASTConsumer final : public ASTConsumer {
 	Visitor visitor;
 
 public:
-	explicit NormanASTConsumer(CompilerInstance* CI, Config const& config, Rewriter& rewriter)
-	  : visitor{CI, config, rewriter} { }
+	template <typename... V>
+	explicit SimpleASTConsumer(V&&... args)
+	  : visitor{std::forward<V>(args)...} { }
 
 	void HandleTranslationUnit(ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
 };
 
-template <typename Consumer> class NormanFrontendAction final : public ASTFrontendAction {
-	Config const& config;
-	Rewriter rewriter;
+template <typename Consumer> class StringRewriterFrontendAction final : public ASTFrontendAction {
 	bool& rewritten;
+	Config const& config;
+	std::string result;
+
+	clang::SourceManager* sourceManager;
 
 public:
-	NormanFrontendAction(bool* rewritten, Config const* config)
+	StringRewriterFrontendAction(bool* rewritten, Config const* config)
+	  : config{*config}
+	  , rewritten{*rewritten} { }
+
+	std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(CompilerInstance& CI, StringRef /*file*/) override {
+		return std::make_unique<Consumer>(&CI, config, result);
+	}
+
+	bool PrepareToExecuteAction(CompilerInstance& CI) override {
+		result.clear();
+		sourceManager = &CI.getSourceManager();
+		return ASTFrontendAction::PrepareToExecuteAction(CI);
+	}
+
+	void EndSourceFileAction() override {
+#if LLVM_VERSION_MAJOR > 17
+		auto fileEntryRef = sourceManager->getFileEntryRefForID(sourceManager->getMainFileID());
+		assert(fileEntryRef.has_value());
+		auto name = fileEntryRef->getName();
+#else
+		auto name = sourceManager->getFileEntryForID(sourceManager->getMainFileID())->getName();
+#endif
+
+		std::error_code error_code;
+		llvm::raw_fd_ostream outFile{name, error_code};
+		if(error_code) {
+			llvm::errs() << error_code.message() << "\n";
+			std::exit(1);
+		}
+		outFile.write(result.data(), result.size());
+		outFile.close();
+		rewritten = true;
+	}
+};
+
+template <typename Consumer> class ClangRewriterFrontendAction final : public ASTFrontendAction {
+	bool& rewritten;
+	Config const& config;
+	Rewriter rewriter;
+
+public:
+	ClangRewriterFrontendAction(bool* rewritten, Config const* config)
 	  : config{*config}
 	  , rewritten{*rewritten} { }
 
@@ -425,7 +449,7 @@ int main(int argc, const char** argv) {
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
 
 		bool rewritten;
-		using TUFixupAction = NormanFrontendAction<NormanASTConsumer<TUFixupVisitor>>;
+		using TUFixupAction = StringRewriterFrontendAction<SimpleASTConsumer<TUFixupVisitor>>;
 		int result = Tool.run(&(*newFrontendActionDataFactory<TUFixupAction>(&rewritten, &config)));
 		if(result != EXIT_SUCCESS) {
 			return result;
@@ -439,7 +463,7 @@ int main(int argc, const char** argv) {
 		// disable printing warnings
 		Tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster("-w"));
 
-		using NormaliseAction = NormanFrontendAction<NormanASTConsumer<NormaliseVisitor>>;
+		using NormaliseAction = ClangRewriterFrontendAction<SimpleASTConsumer<NormaliseVisitor>>;
 		int result = Tool.run(&(*newFrontendActionDataFactory<NormaliseAction>(&rewritten, &config)));
 		if(result != EXIT_SUCCESS) {
 			return result;

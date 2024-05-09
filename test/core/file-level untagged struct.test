@@ -12,7 +12,6 @@ struct Decl__1 {
 	int x;
 };
 struct Decl__1 a;
-
 struct Decl__2 {
 	int y;
 };

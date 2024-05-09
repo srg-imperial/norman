@@ -12,7 +12,6 @@ struct A {
 	int x;
 };
 struct A a;
-
 struct B {
 	int y;
 };
