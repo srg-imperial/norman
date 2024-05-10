@@ -2,6 +2,8 @@ add_executable(norman
   Norman.cpp
   Config.cpp
   Context.cpp
+  Normalise.cpp
+  TUFixup.cpp
   check/Label.cpp
   check/NakedBreak.cpp
   check/NakedCaseOrDefault.cpp
