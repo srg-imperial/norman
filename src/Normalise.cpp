@@ -120,7 +120,8 @@ namespace {
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.expression);                         \
                                                                                                                        \
-			logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));             \
+			logln("Transformation applied from ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()), " to ",     \
+			      DisplaySourceLoc(ctxs.back().astContext, node->getEndLoc()));                                              \
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \
@@ -136,7 +137,8 @@ namespace {
 			rewriter.RemoveText(node->getSourceRange(), onlyRemoveOld);                                                      \
 			rewriter.InsertTextAfter(node->getSourceRange().getBegin(), transformResult.statement);                          \
                                                                                                                        \
-			logln("Transformation applied at: ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()));             \
+			logln("Transformation applied from ", DisplaySourceLoc(ctxs.back().astContext, node->getBeginLoc()), " to ",     \
+			      DisplaySourceLoc(ctxs.back().astContext, node->getEndLoc()));                                              \
 			return true;                                                                                                     \
 		}                                                                                                                  \
                                                                                                                        \

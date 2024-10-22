@@ -31,7 +31,7 @@ namespace {
 
 			for(auto* decl : tuDecl->decls()) {
 				if(decl->isImplicit()) {
-					// do nothing
+					// do nothing, it will be explicit for the resulting code as well
 				} else if(auto* recordDecl = llvm::dyn_cast<clang::RecordDecl>(decl)) {
 					if(recordDecl->getName().empty()) {
 						auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
