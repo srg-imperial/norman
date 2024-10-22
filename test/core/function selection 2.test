@@ -1,0 +1,21 @@
+-- A config file may disable processing by default, but enable it again for specific functions such as those called `main`.
+
+void foo() { ; }
+
+int main() { ; }
+---
+void foo() { ; }
+
+int main() { }
+---
+{
+  "default": {
+    "process": false
+  },
+  "functions": [
+    {
+      "name": "main",
+      "process": true
+    }
+  ]
+}
