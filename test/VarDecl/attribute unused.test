@@ -1,0 +1,10 @@
+-- Regression test: Ensure that `__attribute__((unused))` does not break norman.
+
+int main() {
+	int __attribute__((unused)) whatever = 0;
+}
+---
+int main() {
+	int whatever;
+  whatever = 0;
+}

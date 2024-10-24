@@ -14,6 +14,10 @@
 #include <memory>
 #include <string>
 
+#if LLVM_VERSION_MAJOR < 18
+	#include <regex>
+#endif
+
 namespace {
 	class TUFixupVisitor : public clang::RecursiveASTVisitor<TUFixupVisitor> {
 		std::string& result;
@@ -51,6 +55,18 @@ namespace {
 
 			return true;
 		}
+
+#if LLVM_VERSION_MAJOR < 18
+		static void finalize(Config const&, std::string& result) {
+			// Clang < 18 does not correctly print `__attribute__((unused))`.
+			std::regex attribute_unused{R"(__attribute__\s*\(\s*\(\s*unused\s*\)\s*\))"};
+			std::string new_result;
+			new_result.reserve(result.size());
+			std::regex_replace(std::back_inserter(new_result), result.begin(), result.end(), attribute_unused, "");
+
+			result = std::move(new_result);
+		}
+#endif
 	};
 } // namespace
 

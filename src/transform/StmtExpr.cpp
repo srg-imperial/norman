@@ -49,8 +49,8 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 	// but the final statement may be the target of a goto from within the statement expression, for example:
 	// `({goto stmt; stmt: 42;})`
 	while(auto* labelStmt = llvm::dyn_cast<clang::LabelStmt>(finalStmt)) {
-			out = fmt::format_to(out, "{}:", ctx.source_text(labelStmt->getDecl()->getSourceRange()));
-			finalStmt = labelStmt->getSubStmt();
+		out = fmt::format_to(out, "{}:", ctx.source_text(labelStmt->getDecl()->getSourceRange()));
+		finalStmt = labelStmt->getSubStmt();
 	}
 	out = fmt::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(finalStmt->getSourceRange()));
 	// we need to protect against accidental token concatination, as we now return a valid identifier where there were

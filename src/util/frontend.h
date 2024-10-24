@@ -12,10 +12,20 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 template <typename Visitor> class SimpleASTConsumer final : public clang::ASTConsumer {
 	Visitor visitor;
+
+	template <typename... Args> struct has_finalize_helper {
+		template <typename T, typename = void> static std::false_type has_finalize(long);
+		template <typename T, typename = std::void_t<decltype(T::finalize(std::declval<Args>()...))>>
+		static std::true_type has_finalize(int);
+	};
+
+	template <typename... Args>
+	struct has_finalize : decltype(has_finalize_helper<Args...>::template has_finalize<Visitor>(0)) { };
 
 public:
 	template <typename... V>
@@ -23,6 +33,12 @@ public:
 	  : visitor{std::forward<V>(args)...} { }
 
 	void HandleTranslationUnit(clang::ASTContext& Context) { visitor.TraverseDecl(Context.getTranslationUnitDecl()); }
+
+	template <typename... Args> static void finalize(Args&&... args) {
+		if constexpr(has_finalize<Args...>::value) {
+			return Visitor::finalize(std::forward<Args>(args)...);
+		}
+	}
 };
 
 template <typename Consumer> class StringRewriterFrontendAction final : public clang::ASTFrontendAction {
@@ -47,6 +63,8 @@ public:
 	}
 
 	void EndSourceFileAction() override {
+		Consumer::finalize(config, result);
+
 #if LLVM_VERSION_MAJOR > 17
 		auto fileEntryRef = sourceManager->getFileEntryRefForID(sourceManager->getMainFileID());
 		assert(fileEntryRef.has_value());
@@ -87,6 +105,8 @@ public:
 	}
 
 	void EndSourceFileAction() override {
+		Consumer::finalize(config, rewriter);
+
 		if(clang::RewriteBuffer const* rb = rewriter.getRewriteBufferFor(rewriter.getSourceMgr().getMainFileID())) {
 #if LLVM_VERSION_MAJOR > 17
 			auto fileEntryRef = rewriter.getSourceMgr().getFileEntryRefForID(rewriter.getSourceMgr().getMainFileID());

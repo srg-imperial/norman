@@ -54,9 +54,11 @@ namespace {
 				auto inc_str = ctx.source_text(inc->IgnoreParens()->getSourceRange());
 				if(checks::naked_continue(*body)) {
 					std::string var_name = ctx.uid("ForStmt");
-					out = fmt::format_to(out, "_Bool {} = 0;\nwhile(1){{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, var_name, inc_str, var_name);
+					out = fmt::format_to(out, "_Bool {} = 0;\nwhile(1){{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, var_name,
+					                     inc_str, var_name);
 					if(cond) {
-						out = fmt::format_to(out, "if(!({})) {{\nbreak;\n}}\n", ctx.source_text(cond->IgnoreParens()->getSourceRange()));
+						out = fmt::format_to(out, "if(!({})) {{\nbreak;\n}}\n",
+						                     ctx.source_text(cond->IgnoreParens()->getSourceRange()));
 					}
 					transform_body();
 					out = fmt::format_to(out, "\n}}");

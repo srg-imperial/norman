@@ -14,7 +14,8 @@ std::optional<transform::ParenExprConfig> transform::ParenExprConfig::parse(rapi
 	  v, []([[maybe_unused]] auto& config, [[maybe_unused]] auto const& member) { return false; });
 }
 
-ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, Context& ctx, clang::ParenExpr& pexpr) {
+ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config, Context& ctx,
+                                                  clang::ParenExpr& pexpr) {
 	if(!config.enabled) {
 		return {};
 	}
