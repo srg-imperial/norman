@@ -11,7 +11,7 @@ template <typename T, typename Char>
 struct fmt::formatter<T, Char, std::enable_if_t<std::is_base_of_v<clang::Decl, T>>> {
 	template <typename ParseContext> constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
-	template <typename FormatContext> auto format(T const& decl, FormatContext& ctx) {
+	template <typename FormatContext> auto format(T const& decl, FormatContext& ctx) const {
 		std::string buffer;
 		{
 			llvm::raw_string_ostream out{buffer};

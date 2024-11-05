@@ -16,7 +16,7 @@ find_program(ClangFormat NAMES clang-format REQUIRED PATHS "${LLVM_BINARY_DIR}/b
 FetchContent_Declare(
   fmtlib
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 10.2.1)
+  GIT_TAG 11.0.2)
   
 FetchContent_GetProperties(fmtlib)
 if(NOT fmtlib_POPULATED)
