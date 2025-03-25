@@ -1,0 +1,11 @@
+-- Tests a simple initializer (i.e., not a nested, field or array initiazer)
+-- applied to a variable of arithmetic type.
+
+int main() {
+	int x = {0};
+}
+---
+int main() {
+	int x;
+	x = (int){0};
+}
