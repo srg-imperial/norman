@@ -1,0 +1,17 @@
+-- Return statements should have simple arguments.
+
+int foo() {
+	return 0;
+}
+
+int main() {
+	return foo();
+}
+---
+int foo() { return 0; }
+
+int main() {
+      int Return_main_1;
+      Return_main_1 = (foo());
+      return Return_main_1;
+}

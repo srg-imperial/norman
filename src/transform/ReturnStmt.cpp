@@ -30,6 +30,10 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 		return {};
 	}
 
+	if(retVal->getType()->isVoidType()) {
+		return {fmt::format("{};\nreturn;", ctx.source_text(retVal->getSourceRange()))};
+	}
+
 	retVal = retVal->IgnoreImpCasts();
 	if(checks::isSimpleValue(*retVal)) {
 		return {};

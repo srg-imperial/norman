@@ -1,0 +1,10 @@
+-- Return statements with `void` expressions should be split.
+
+void foo() {
+	return (void)0;
+}
+---
+void foo() {
+	(void)0;
+	return;
+}
