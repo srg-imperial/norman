@@ -1,7 +1,7 @@
 #include "LOrOperator.h"
 
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -27,24 +27,24 @@ ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& con
 	if(bool lhs_val; lhs->EvaluateAsBooleanCondition(lhs_val, *ctx.astContext)) {
 		if(lhs_val) {
 			if(lhs->HasSideEffects(*ctx.astContext)) {
-				return {fmt::format("({})", lhs_str)};
+				return {std::format("({})", lhs_str)};
 			} else {
-				return {fmt::format("(1)")};
+				return {std::format("(1)")};
 			}
 		} else {
 			if(lhs->HasSideEffects(*ctx.astContext)) {
 				if(bool rhs_val;
 				   !rhs->HasSideEffects(*ctx.astContext) && rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 					if(rhs_val) {
-						return {fmt::format("(1)"), fmt::format("{};", lhs_str)};
+						return {std::format("(1)"), std::format("{};", lhs_str)};
 					} else {
-						return {fmt::format("({})", lhs_str)};
+						return {std::format("({})", lhs_str)};
 					}
 				} else {
-					return {fmt::format("({})", rhs_str), fmt::format("{};", lhs_str)};
+					return {std::format("({})", rhs_str), std::format("{};", lhs_str)};
 				}
 			} else {
-				return {fmt::format("({})", rhs_str)};
+				return {std::format("({})", rhs_str)};
 			}
 		}
 	}
@@ -54,21 +54,21 @@ ExprTransformResult transform::transformLOrOperator(LOrOperatorConfig const& con
 	if(bool rhs_val; rhs->EvaluateAsBooleanCondition(rhs_val, *ctx.astContext)) {
 		if(rhs_val) {
 			if(rhs->HasSideEffects(*ctx.astContext)) {
-				return {fmt::format("(1)"), fmt::format("{};\n{};", lhs_str, rhs_str)};
+				return {std::format("(1)"), std::format("{};\n{};", lhs_str, rhs_str)};
 			} else {
-				return {fmt::format("(1)"), fmt::format("{};", lhs_str)};
+				return {std::format("(1)"), std::format("{};", lhs_str)};
 			}
 		} else {
 			if(rhs->HasSideEffects(*ctx.astContext)) {
-				auto to_hoist = fmt::format("_Bool {} = ({});\n{};", var_name, lhs_str, rhs_str);
+				auto to_hoist = std::format("_Bool {} = ({});\n{};", var_name, lhs_str, rhs_str);
 				return {std::move(var_name), std::move(to_hoist)};
 			} else {
-				return {fmt::format("({})", lhs_str)};
+				return {std::format("({})", lhs_str)};
 			}
 		}
 	}
 
 	auto to_hoist =
-	  fmt::format("_Bool {} = ({});\nif(!{}) {{\n{} = ({});\n}}", var_name, lhs_str, var_name, var_name, rhs_str);
+	  std::format("_Bool {} = ({});\nif(!{}) {{\n{} = ({});\n}}", var_name, lhs_str, var_name, var_name, rhs_str);
 	return {std::move(var_name), std::move(to_hoist)};
 }

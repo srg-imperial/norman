@@ -4,7 +4,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -34,15 +34,15 @@ StmtTransformResult transform::transformDeclStmt(DeclStmtConfig const& config, C
 					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					recordDecl->setDeclName(clang::DeclarationName{id});
 				}
-				fmt::format_to(std::back_inserter(result), "{};", *recordDecl);
+				std::format_to(std::back_inserter(result), "{};", *recordDecl);
 			} else if(auto* enumDecl = llvm::dyn_cast<clang::EnumDecl>(decl)) {
 				if(enumDecl->getName().empty()) {
 					auto id = &ctx.astContext->Idents.get(ctx.uid("Decl"));
 					enumDecl->setDeclName(clang::DeclarationName{id});
 				}
-				fmt::format_to(std::back_inserter(result), "{};", *enumDecl);
+				std::format_to(std::back_inserter(result), "{};", *enumDecl);
 			} else if(!llvm::isa<clang::EmptyDecl>(decl)) {
-				fmt::format_to(std::back_inserter(result), "{};", *decl);
+				std::format_to(std::back_inserter(result), "{};", *decl);
 			}
 		}
 		return result;

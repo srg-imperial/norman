@@ -2,7 +2,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>

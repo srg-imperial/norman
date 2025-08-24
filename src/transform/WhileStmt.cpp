@@ -7,7 +7,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -27,9 +27,9 @@ std::optional<transform::WhileStmtConfig> transform::WhileStmtConfig::parse(rapi
 namespace {
 	void append_as_compound(std::string& result, Context& ctx, clang::Stmt& stmt) {
 		if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
+			std::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
+			std::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
 		}
 	}
 } // namespace
@@ -48,7 +48,7 @@ StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config,
 		if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 			if(!cond_val) {
 				if(cond->HasSideEffects(*ctx.astContext) || checks::label(*cond) || checks::naked_case_or_default(*cond)) {
-					return {fmt::format("{};", ctx.source_text(cond->getSourceRange()))};
+					return {std::format("{};", ctx.source_text(cond->getSourceRange()))};
 				} else {
 					return {";"s};
 				}
@@ -62,23 +62,23 @@ StmtTransformResult transform::transformWhileStmt(WhileStmtConfig const& config,
 
 	cond = cond->IgnoreParens();
 	if(checks::isSimpleValue(*cond)) {
-		auto result = fmt::format("while({})", ctx.source_text(cond->getSourceRange()));
+		auto result = std::format("while({})", ctx.source_text(cond->getSourceRange()));
 		append_as_compound(result, ctx, *body);
 		return {std::move(result)};
 	} else if(!checks::naked_continue(*body)) {
 		std::string var_name = ctx.uid("WhileCond");
 		auto cond_str = ctx.source_text(cond->getSourceRange());
 
-		auto result = fmt::format("_Bool {} = ({});\nwhile({}) {{\n", var_name, cond_str, var_name);
+		auto result = std::format("_Bool {} = ({});\nwhile({}) {{\n", var_name, cond_str, var_name);
 		append_as_compound(result, ctx, *body);
-		fmt::format_to(std::back_inserter(result), "{} = ({});\n}}", var_name, cond_str);
+		std::format_to(std::back_inserter(result), "{} = ({});\n}}", var_name, cond_str);
 		return {std::move(result)};
 	} else {
 		auto cond_str = ctx.source_text(cond->getSourceRange());
 
-		auto result = fmt::format("while(1) {{\nif(!({})) {{\nbreak;\n}}\n", cond_str);
+		auto result = std::format("while(1) {{\nif(!({})) {{\nbreak;\n}}\n", cond_str);
 		append_as_compound(result, ctx, *body);
-		fmt::format_to(std::back_inserter(result), "\n}}");
+		std::format_to(std::back_inserter(result), "\n}}");
 		return {std::move(result)};
 	}
 }

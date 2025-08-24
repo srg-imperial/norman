@@ -32,7 +32,6 @@ target_link_libraries(norman PRIVATE
   clangASTMatchers
   clangBasic
   clangTooling
-  fmt::fmt
 )
 
 install(TARGETS norman DESTINATION bin)

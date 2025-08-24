@@ -3,7 +3,7 @@
 #include "../check/NakedContinue.h"
 
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -40,9 +40,9 @@ namespace {
 
 		void transform() {
 			if(init) {
-				out = fmt::format_to(out, "{{\n{};\n", ctx.source_text(init->getSourceRange()));
+				out = std::format_to(out, "{{\n{};\n", ctx.source_text(init->getSourceRange()));
 				transform_2();
-				out = fmt::format_to(out, "}}");
+				out = std::format_to(out, "}}");
 			} else {
 				transform_2();
 			}
@@ -54,19 +54,19 @@ namespace {
 				auto inc_str = ctx.source_text(inc->IgnoreParens()->getSourceRange());
 				if(checks::naked_continue(*body)) {
 					std::string var_name = ctx.uid("ForStmt");
-					out = fmt::format_to(out, "_Bool {} = 0;\nwhile(1){{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, var_name,
+					out = std::format_to(out, "_Bool {} = 0;\nwhile(1){{\nif({}){{\n{};\n}}\n{} = 1;\n", var_name, var_name,
 					                     inc_str, var_name);
 					if(cond) {
-						out = fmt::format_to(out, "if(!({})) {{\nbreak;\n}}\n",
+						out = std::format_to(out, "if(!({})) {{\nbreak;\n}}\n",
 						                     ctx.source_text(cond->IgnoreParens()->getSourceRange()));
 					}
 					transform_body();
-					out = fmt::format_to(out, "\n}}");
+					out = std::format_to(out, "\n}}");
 				} else {
 					transform_cond();
-					out = fmt::format_to(out, "{{\n");
+					out = std::format_to(out, "{{\n");
 					transform_body();
-					out = fmt::format_to(out, "{};\n}}", inc_str);
+					out = std::format_to(out, "{};\n}}", inc_str);
 				}
 			} else {
 				transform_cond();
@@ -76,17 +76,17 @@ namespace {
 
 		void transform_cond() {
 			if(cond) {
-				out = fmt::format_to(out, "while({})", ctx.source_text(cond->IgnoreParens()->getSourceRange()));
+				out = std::format_to(out, "while({})", ctx.source_text(cond->IgnoreParens()->getSourceRange()));
 			} else {
-				out = fmt::format_to(out, "while(1)");
+				out = std::format_to(out, "while(1)");
 			}
 		}
 
 		void transform_body() {
 			if(llvm::isa<clang::CompoundStmt>(body)) {
-				out = fmt::format_to(out, "{}", ctx.source_text(body->getSourceRange()));
+				out = std::format_to(out, "{}", ctx.source_text(body->getSourceRange()));
 			} else {
-				out = fmt::format_to(out, "{{\n{}\n}}\n", ctx.source_text(body->getSourceRange()));
+				out = std::format_to(out, "{{\n{}\n}}\n", ctx.source_text(body->getSourceRange()));
 			}
 		}
 	};

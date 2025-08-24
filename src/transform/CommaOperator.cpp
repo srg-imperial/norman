@@ -1,7 +1,7 @@
 #include "CommaOperator.h"
 
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -25,8 +25,8 @@ ExprTransformResult transform::transformCommaOperator(CommaOperatorConfig const&
 	auto rhs_str = ctx.source_text(rhs->IgnoreParens()->getSourceRange());
 
 	if(!lhs->HasSideEffects(*ctx.astContext)) {
-		return {fmt::format("({})", rhs_str)};
+		return {std::format("({})", rhs_str)};
 	}
 
-	return {fmt::format("({})", rhs_str), fmt::format("{};\n", lhs_str)};
+	return {std::format("({})", rhs_str), std::format("{};\n", lhs_str)};
 }

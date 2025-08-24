@@ -3,7 +3,7 @@
 #include "../check/SimpleValue.h"
 
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -23,9 +23,9 @@ ExprTransformResult transform::transformParenExpr(ParenExprConfig const& config,
 	auto stripped = pexpr.IgnoreParens();
 
 	if(checks::isSimpleValue(*stripped)) {
-		return {fmt::format(" {} ", ctx.source_text(stripped->getSourceRange()))};
+		return {std::format(" {} ", ctx.source_text(stripped->getSourceRange()))};
 	} else if(stripped != pexpr.getSubExpr()) {
-		return {fmt::format("({})", ctx.source_text(stripped->getSourceRange()))};
+		return {std::format("({})", ctx.source_text(stripped->getSourceRange()))};
 	} else {
 		return {};
 	}

@@ -7,7 +7,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -27,9 +27,9 @@ std::optional<transform::IfStmtConfig> transform::IfStmtConfig::parse(rapidjson:
 namespace {
 	void append_as_compound(std::string& result, Context& ctx, clang::Stmt& stmt) {
 		if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
+			std::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt.getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
+			std::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt.getSourceRange()));
 		}
 	}
 
@@ -38,18 +38,18 @@ namespace {
 			return;
 		}
 
-		fmt::format_to(std::back_inserter(result), "else");
+		std::format_to(std::back_inserter(result), "else");
 		if(auto ifStmt = llvm::dyn_cast<clang::IfStmt>(stmt)) {
 			auto transformResult = transform::transformIfStmt(config, ctx, *ifStmt);
 			if(transformResult.do_rewrite) {
-				fmt::format_to(std::back_inserter(result), "{{\n{}\n}}", transformResult.statement);
+				std::format_to(std::back_inserter(result), "{{\n{}\n}}", transformResult.statement);
 			} else {
 				append_as_compound(result, ctx, *stmt);
 			}
 		} else if(llvm::isa<clang::CompoundStmt>(stmt)) {
-			fmt::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt->getSourceRange()));
+			std::format_to(std::back_inserter(result), "{}", ctx.source_text(stmt->getSourceRange()));
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt->getSourceRange()));
+			std::format_to(std::back_inserter(result), "{{\n{};\n}}", ctx.source_text(stmt->getSourceRange()));
 		}
 	}
 } // namespace
@@ -71,7 +71,7 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 		if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 			std::string result;
 			if(cond->HasSideEffects(*ctx.astContext)) {
-				result = fmt::format("{};", ctx.source_text(cond->getSourceRange()));
+				result = std::format("{};", ctx.source_text(cond->getSourceRange()));
 			}
 			if(cond_val) {
 				if(!then_stmt_is_null_stmt) {
@@ -93,9 +93,9 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 	// We never want to keep a null statement as the then condition
 	if(then_stmt_is_null_stmt) {
 		if(else_stmt_is_null_stmt) {
-			return {fmt::format("{};", ctx.source_text(cond->getSourceRange()))};
+			return {std::format("{};", ctx.source_text(cond->getSourceRange()))};
 		} else {
-			auto result = fmt::format("if(!({}))", ctx.source_text(cond->getSourceRange()));
+			auto result = std::format("if(!({}))", ctx.source_text(cond->getSourceRange()));
 			append_as_compound(result, ctx, *else_stmt);
 			return {std::move(result)};
 		}
@@ -113,7 +113,7 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 
 	cond = cond->IgnoreParens();
 	if(checks::isSimpleValue(*cond)) {
-		auto result = fmt::format("if({})", ctx.source_text(cond->getSourceRange()));
+		auto result = std::format("if({})", ctx.source_text(cond->getSourceRange()));
 		append_as_compound(result, ctx, *then_stmt);
 		append_else(result, config, ctx, else_stmt);
 		return {std::move(result)};
@@ -123,7 +123,7 @@ StmtTransformResult transform::transformIfStmt(IfStmtConfig const& config, Conte
 		  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 		  &ctx.astContext->Idents.get(var_name), ifStmt.getCond()->getType(), nullptr, clang::StorageClass::SC_None);
 
-		auto result = fmt::format("{} = ({});\nif({})", *vd, ctx.source_text(cond->getSourceRange()), var_name);
+		auto result = std::format("{} = ({});\nif({})", *vd, ctx.source_text(cond->getSourceRange()), var_name);
 		append_as_compound(result, ctx, *then_stmt);
 		append_else(result, config, ctx, else_stmt);
 		return {std::move(result)};

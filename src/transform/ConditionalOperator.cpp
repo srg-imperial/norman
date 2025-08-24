@@ -2,7 +2,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -34,9 +34,9 @@ ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorC
 
 	if(bool cond_val; cond->EvaluateAsBooleanCondition(cond_val, *ctx.astContext)) {
 		if(cond->HasSideEffects(*ctx.astContext)) {
-			return {fmt::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr)};
+			return {std::format("(({}), ({}))", cexpr, cond_val ? texpr : fexpr)};
 		} else {
-			return {fmt::format("({})", cond_val ? texpr : fexpr)};
+			return {std::format("({})", cond_val ? texpr : fexpr)};
 		}
 	}
 
@@ -44,13 +44,13 @@ ExprTransformResult transform::transformConditionalOperator(ConditionalOperatorC
 
 	auto const expr_type = cop.getType();
 	if(expr_type->isVoidType()) {
-		return {"((void)0)", fmt::format("if({}) {{\n{};\n}} else {{\n{};\n}}\n", cexpr, texpr, fexpr)};
+		return {"((void)0)", std::format("if({}) {{\n{};\n}} else {{\n{};\n}}\n", cexpr, texpr, fexpr)};
 	} else {
 		clang::VarDecl* vd = clang::VarDecl::Create(
 		  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 		  &ctx.astContext->Idents.get(var_name), expr_type, nullptr, clang::StorageClass::SC_None);
 
-		std::string to_hoist = fmt::format("{};\nif({}) {{\n{} = ({});\n}} else {{\n{} = ({});\n}}\n", *vd, cexpr, var_name,
+		std::string to_hoist = std::format("{};\nif({}) {{\n{} = ({});\n}} else {{\n{} = ({});\n}}\n", *vd, cexpr, var_name,
 		                                   texpr, var_name, fexpr);
 		return {std::move(var_name), std::move(to_hoist)};
 	}

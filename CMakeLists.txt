@@ -13,22 +13,10 @@ find_package(Clang REQUIRED CONFIG HINTS "${LLVM_DIR}")
 
 find_program(ClangFormat NAMES clang-format REQUIRED PATHS "${LLVM_BINARY_DIR}/bin" NO_DEFAULT_PATH)
 
-FetchContent_Declare(
-  fmtlib
-  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 11.0.2
-  EXCLUDE_FROM_ALL)
-  
-FetchContent_GetProperties(fmtlib)
-if(NOT fmtlib_POPULATED)
-  FetchContent_MakeAvailable(fmtlib)
-endif()
-
 find_package(RapidJSON REQUIRED CONFIG)
 
 
-# Use the same C++ standard as LLVM does
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "")
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "")
 
 # LLVM is normally built without RTTI. Be consistent with that.
 if(NOT LLVM_ENABLE_RTTI)

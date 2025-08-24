@@ -7,7 +7,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -42,21 +42,21 @@ namespace {
 		}
 
 		if(hasBreak) {
-			fmt::format_to(std::back_inserter(result), "{{\ndo {{\n");
+			std::format_to(std::back_inserter(result), "{{\ndo {{\n");
 		} else {
-			fmt::format_to(std::back_inserter(result), "{{\n");
+			std::format_to(std::back_inserter(result), "{{\n");
 		}
 
 		for(std::size_t j = startIndex; j < end; ++j) {
 			// this may introduce null statements if the current statement does not require a semicolon to terminate it. For
 			// example `if(1) {}` would be printed as `if(1) {};`
-			fmt::format_to(std::back_inserter(result), "{};", ctx.source_text(stmts[j].first->getSourceRange()));
+			std::format_to(std::back_inserter(result), "{};", ctx.source_text(stmts[j].first->getSourceRange()));
 		}
 
 		if(hasBreak) {
-			fmt::format_to(std::back_inserter(result), "}} while(0);\n}}");
+			std::format_to(std::back_inserter(result), "}} while(0);\n}}");
 		} else {
-			fmt::format_to(std::back_inserter(result), "}}");
+			std::format_to(std::back_inserter(result), "}}");
 		}
 	}
 } // namespace
@@ -84,7 +84,7 @@ StmtTransformResult transform::transformSwitchStmt(SwitchStmtConfig const& confi
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), cond->getType(), nullptr, clang::StorageClass::SC_None);
-	std::string result = fmt::format("{} = ({});\n", *vd, ctx.source_text(cond->getSourceRange()));
+	std::string result = std::format("{} = ({});\n", *vd, ctx.source_text(cond->getSourceRange()));
 
 	if(clang::CompoundStmt* body = llvm::dyn_cast<clang::CompoundStmt>(switchStmt.getBody())) {
 		std::optional<std::size_t> defaultStmtTarget;
@@ -125,45 +125,44 @@ StmtTransformResult transform::transformSwitchStmt(SwitchStmtConfig const& confi
 
 		for(std::size_t i = 0; i < caseStmts.size(); ++i) {
 			if(i > 0) {
-				fmt::format_to(std::back_inserter(result), "else ");
+				std::format_to(std::back_inserter(result), "else ");
 			}
-			fmt::format_to(std::back_inserter(result), "if (");
+			std::format_to(std::back_inserter(result), "if (");
 
 			for(std::size_t j = 0; j < caseStmts[i].first.size(); ++j) {
 				clang::CaseStmt* caseStmt = caseStmts[i].first[j];
 
 				if(j > 0) {
-					fmt::format_to(std::back_inserter(result), " || ");
+					std::format_to(std::back_inserter(result), " || ");
 				}
 
 				clang::Expr* lhs = caseStmt->getLHS();
 				if(clang::Expr* rhs = caseStmt->getRHS()) {
 					if(caseStmts[i].first.size() != 1) {
-						fmt::format_to(std::back_inserter(result), "(");
+						std::format_to(std::back_inserter(result), "(");
 					}
-					fmt::format_to(std::back_inserter(result), "({}) <= {} && {} <= ({]})",
-					               ctx.source_text(lhs->getSourceRange()), var_name, var_name,
-					               ctx.source_text(rhs->getSourceRange()));
+					std::format_to(std::back_inserter(result), "({}) <= {} && {} <= ({})", ctx.source_text(lhs->getSourceRange()),
+					               var_name, var_name, ctx.source_text(rhs->getSourceRange()));
 					if(caseStmts[i].first.size() != 1) {
-						fmt::format_to(std::back_inserter(result), ")");
+						std::format_to(std::back_inserter(result), ")");
 					}
 				} else {
-					fmt::format_to(std::back_inserter(result), "{} == ({})", var_name, ctx.source_text(lhs->getSourceRange()));
+					std::format_to(std::back_inserter(result), "{} == ({})", var_name, ctx.source_text(lhs->getSourceRange()));
 				}
 			}
 
-			fmt::format_to(std::back_inserter(result), ") ");
+			std::format_to(std::back_inserter(result), ") ");
 			printStmts(result, ctx, stmts, caseStmts[i].second);
 		}
 
 		if(defaultStmtTarget) {
-			fmt::format_to(std::back_inserter(result), " else ");
+			std::format_to(std::back_inserter(result), " else ");
 			printStmts(result, ctx, stmts, *defaultStmtTarget);
 		}
 
 		return {std::move(result)};
 	} else {
-		return {fmt::format("switch({}) {{\n{};\n}}", ctx.source_text(cond->getSourceRange()),
+		return {std::format("switch({}) {{\n{};\n}}", ctx.source_text(cond->getSourceRange()),
 		                    ctx.source_text(switchStmt.getBody()->getSourceRange()))};
 	}
 }

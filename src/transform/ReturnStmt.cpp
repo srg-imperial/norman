@@ -4,7 +4,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -31,7 +31,7 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 	}
 
 	if(retVal->getType()->isVoidType()) {
-		return {fmt::format("{};\nreturn;", ctx.source_text(retVal->getSourceRange()))};
+		return {std::format("{};\nreturn;", ctx.source_text(retVal->getSourceRange()))};
 	}
 
 	retVal = retVal->IgnoreImpCasts();
@@ -41,7 +41,7 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 
 	retVal = retVal->IgnoreParens();
 	if(checks::isSimpleValue(*retVal)) {
-		return {fmt::format("return {}", ctx.source_text(retVal->getSourceRange()))};
+		return {std::format("return {}", ctx.source_text(retVal->getSourceRange()))};
 	}
 
 	std::string var_name = ctx.uid("Return");
@@ -49,5 +49,5 @@ StmtTransformResult transform::transformReturnStmt(ReturnStmtConfig const& confi
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), returnStmt.getRetValue()->getType(), nullptr, clang::StorageClass::SC_None);
 
-	return {fmt::format("{} = ({});\nreturn {}", *vd, ctx.source_text(retVal->getSourceRange()), var_name)};
+	return {std::format("{} = ({});\nreturn {}", *vd, ctx.source_text(retVal->getSourceRange()), var_name)};
 }

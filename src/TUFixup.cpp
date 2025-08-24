@@ -5,7 +5,7 @@
 
 #include "util/fmtlib_clang.h"
 #include "util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -27,7 +27,7 @@ namespace {
 		  : result(result) { }
 
 		void writeDecl(Context const& ctx, clang::Decl* decl) {
-			fmt::format_to(std::back_inserter(result), "{};\n", *decl);
+			std::format_to(std::back_inserter(result), "{};\n", *decl);
 		}
 
 		bool TraverseTranslationUnitDecl(clang::TranslationUnitDecl* tuDecl) {

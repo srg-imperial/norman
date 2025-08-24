@@ -1,10 +1,10 @@
 #pragma once
 
 #include <algorithm>
-#include <fmt/core.h>
+#include <format>
 #include <llvm/ADT/StringRef.h>
 
-template <> struct fmt::formatter<llvm::StringRef> {
+template <> struct std::formatter<llvm::StringRef> {
 	template <typename ParseContext> constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
 
 	template <typename FormatContext> auto format(llvm::StringRef const& str, FormatContext& ctx) const {

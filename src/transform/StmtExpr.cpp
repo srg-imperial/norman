@@ -2,7 +2,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -38,10 +38,10 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 	clang::VarDecl* vd = clang::VarDecl::Create(
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), stexpr_type, nullptr, clang::StorageClass::SC_None);
-	out = fmt::format_to(out, "{};\n{{", *vd);
+	out = std::format_to(out, "{};\n{{", *vd);
 
 	for(clang::CompoundStmt::body_iterator S = Stmts->body_begin(), end = std::prev(Stmts->body_end()); S != end; ++S) {
-		out = fmt::format_to(out, "{};\n", ctx.source_text((*S)->getSourceRange()));
+		out = std::format_to(out, "{};\n", ctx.source_text((*S)->getSourceRange()));
 	}
 
 	clang::Stmt* finalStmt = Stmts->body_back();
@@ -49,11 +49,11 @@ ExprTransformResult transform::transformStmtExpr(StmtExprConfig const& config, C
 	// but the final statement may be the target of a goto from within the statement expression, for example:
 	// `({goto stmt; stmt: 42;})`
 	while(auto* labelStmt = llvm::dyn_cast<clang::LabelStmt>(finalStmt)) {
-		out = fmt::format_to(out, "{}:", ctx.source_text(labelStmt->getDecl()->getSourceRange()));
+		out = std::format_to(out, "{}:", ctx.source_text(labelStmt->getDecl()->getSourceRange()));
 		finalStmt = labelStmt->getSubStmt();
 	}
-	out = fmt::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(finalStmt->getSourceRange()));
+	out = std::format_to(out, "{}=({});\n}}", var_name, ctx.source_text(finalStmt->getSourceRange()));
 	// we need to protect against accidental token concatenation, as we now return a valid identifier where there were
 	// parentheses previously
-	return {fmt::format(" {} ", var_name), std::move(to_hoist)};
+	return {std::format(" {} ", var_name), std::move(to_hoist)};
 }

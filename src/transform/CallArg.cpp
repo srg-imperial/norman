@@ -4,7 +4,7 @@
 
 #include "../util/fmtlib_clang.h"
 #include "../util/fmtlib_llvm.h"
-#include <fmt/format.h>
+#include <format>
 
 #include <clang/AST/AST.h>
 #include <clang/AST/ASTContext.h>
@@ -34,7 +34,7 @@ ExprTransformResult transform::transformCallArg(CallArgConfig const& config, Con
 	  *ctx.astContext, ctx.astContext->getTranslationUnitDecl(), clang::SourceLocation(), clang::SourceLocation(),
 	  &ctx.astContext->Idents.get(var_name), arg.getType(), nullptr, clang::StorageClass::SC_None);
 
-	std::string to_hoist = fmt::format("{} = ({});\n", *vd, ctx.source_text(arg.getSourceRange()));
+	std::string to_hoist = std::format("{} = ({});\n", *vd, ctx.source_text(arg.getSourceRange()));
 
 	return {std::move(var_name), std::move(to_hoist)};
 }
