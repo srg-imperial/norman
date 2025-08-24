@@ -10,7 +10,7 @@ variables:
   parallel:
     matrix:
       - OS: ubuntu-24.04
-        LLVM: [14, 15, 16, 17, 18]
+        LLVM: [14, 15, 16, 17, 18, 19]
 
 build-base:
   stage: build
