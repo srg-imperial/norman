@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 project(norman)
 
 include(CTest)
@@ -16,15 +16,13 @@ find_program(ClangFormat NAMES clang-format REQUIRED PATHS "${LLVM_BINARY_DIR}/b
 FetchContent_Declare(
   fmtlib
   GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 11.0.2)
+  GIT_TAG 11.0.2
+  EXCLUDE_FROM_ALL)
   
 FetchContent_GetProperties(fmtlib)
 if(NOT fmtlib_POPULATED)
-  FetchContent_Populate(fmtlib)
-  add_subdirectory(${fmtlib_SOURCE_DIR} ${fmtlib_BINARY_DIR} EXCLUDE_FROM_ALL)
+  FetchContent_MakeAvailable(fmtlib)
 endif()
-# as of cmake 3.28 it should be possible to add `EXCLUDE_FROM_ALL` to the `FetchContent_Declare` call
-# and do an ordinary `FetchContent_MakeAvailable(fmtlib)` to achieve the same effect
 
 find_package(RapidJSON REQUIRED CONFIG)
 

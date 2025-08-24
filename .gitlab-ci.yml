@@ -9,8 +9,6 @@ variables:
 .full-matrix:
   parallel:
     matrix:
-      - OS: ubuntu-22.04
-        LLVM: [12, 13, 14, 15]
       - OS: ubuntu-24.04
         LLVM: [14, 15, 16, 17, 18]
 
@@ -95,11 +93,11 @@ format:
     - job: "build-base"
       parallel:
         matrix:
-          - OS: ubuntu-22.04
-            LLVM: 12
-  image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12
+          - OS: ubuntu-24.04
+            LLVM: 14
+  image: ${CI_REGISTRY_IMAGE}/ci/base:${CI_COMMIT_SHA}-ubuntu-24.04-llvm-14
   script:
-    - find src -iname '*.cpp' -or -iname '*.h' -print | xargs clang-format-12 --dry-run --Werror
+    - find src -iname '*.cpp' -or -iname '*.h' -print | xargs clang-format-14 --dry-run --Werror
 
 publish:
   stage: publish
@@ -132,4 +130,4 @@ publish-latest:
   before_script:
     - crane auth login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-22.04-llvm-12" "${CI_REGISTRY_IMAGE}:latest"
+    - crane cp "${CI_REGISTRY_IMAGE}/ci/prebuilt:${CI_COMMIT_SHA}-ubuntu-24.04-llvm-14" "${CI_REGISTRY_IMAGE}:latest"
